@@ -15,7 +15,7 @@ namespace dte3607::physengine::mechanics
   {
     auto dt = utils::toDtScalar(timestep);
     auto a = external_forces * dt;
-    auto ds = velocity * dt * 0.5 * a;
+    auto ds = (velocity + 0.5 * a) * dt;
     return {ds, a};
   }
 
