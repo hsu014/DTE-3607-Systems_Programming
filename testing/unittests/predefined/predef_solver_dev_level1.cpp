@@ -54,14 +54,12 @@ struct SolverDevLevel0_Fixture001 : ::testing::Test {
 
 
 
-
-
 TEST_F(SolverDevLevel0_Fixture001, Test001)
 {
   solver_dev::level0::solve(*m_scenario, 1s);
 
   auto no_rbs = m_scenario->noRigidBodies();
-  for( auto rid = 0; rid < no_rbs; ++rid )
+  for( auto rid = 0; rid < int(no_rbs); ++rid )
   {
     // Ask for global frame position of object nr. i
     auto const pos = m_scenario->globalFramePosition(rid);
@@ -97,18 +95,16 @@ struct SolverDevLevel1_Fixture001 : ::testing::Test {
 
 
 
+
 TEST_F(SolverDevLevel1_Fixture001, Test001)
 {
   solver_dev::level1::solve(*m_scenario, 1s);
 
   auto no_rbs = m_scenario->noRigidBodies();
-  for( auto rid = 0; rid < no_rbs; ++rid )
+  for( auto rid = 0; rid < int(no_rbs); ++rid )
   {
     // Ask for global frame position of object nr. i
     auto const pos = m_scenario->globalFramePosition(rid);
     EXPECT_NEAR(pos[0], 100, 1e-7);
   }
 }
-
-
-

@@ -27,16 +27,33 @@ namespace dte3607::physengine::fixtures
     using Forces = types::Vector3;
 
 
+
     /*** API concept required methods ***/
 
     // Global properties
-    size_t noRigidBodies() const { return {}; }
-    void   setGravity([[maybe_unused]] Forces G) {}
+    size_t noRigidBodies() const {
+      return m_spheres.size();
+    }
+
+    void   setGravity([[maybe_unused]] Forces G) {
+      m_gravity = G;
+    }
 
     // RB properties
-    types::Point3 globalFramePosition([[maybe_unused]] size_t rid) const
-    {
-      return {};
+    types::Point3 globalFramePosition([[maybe_unused]] size_t rid) const {
+      return m_spheres[rid].translation;
+    }
+
+    void setGlobalFramePosition(size_t rid, const Vector3& pos) {
+      m_spheres[rid].translation = pos;
+    }
+
+    types::Point3 globalFrameVelocity([[maybe_unused]] size_t rid) const {
+      return m_spheres[rid].velocity;
+    }
+
+    Forces getGravity() const {
+      return m_gravity;
     }
 
     /*** Fixture unit-test setup API ***/
@@ -44,11 +61,22 @@ namespace dte3607::physengine::fixtures
                         [[maybe_unused]] Vector3   velocity    = {0, 0, 0},
                         [[maybe_unused]] Vector3   translation = {0, 0, 0})
     {
-      return {};
+      // Same as: m_spheres.push_back(Sphere(radius, velocity, translation));
+      m_spheres.push_back({radius, velocity, translation});
+      return m_spheres.size() - 1;
     }
 
     /*** END API requirements ***/
 
+    struct Sphere {
+      types::ValueType radius;
+      types::Vector3   velocity;
+      types::Vector3   translation;
+    };
+
+    /*** Members ***/
+    std::vector<Sphere> m_spheres;
+    Forces m_gravity;
 
   };
 
