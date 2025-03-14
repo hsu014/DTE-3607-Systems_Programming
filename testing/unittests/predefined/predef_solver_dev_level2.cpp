@@ -1,4 +1,5 @@
-#include <physengine/solvers/solver_dev_level2.h>
+#include <physengine/solvers/solver_dev_level2_2.h>
+#include <physengine/solvers/solver_dev_level2_3.h>
 #include <physengine/bits/fixtures.h>
 #include <physengine/bits/types.h>
 
