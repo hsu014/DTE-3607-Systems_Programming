@@ -41,10 +41,10 @@ namespace dte3607::physengine::solver_dev::level2_2
 
 
   struct IntersectDetProcDataBlock {
-      size_t sphere_id;                     // Sphere id
-      size_t plane_id;                      // Inf plane data
-      types::Duration col_tp;               // Intersection time
-    };
+    size_t sphere_id;                     // Sphere id
+    size_t plane_id;                      // Inf plane data
+    types::HighResolutionTP col_tp;       // Intersection time
+  };
   using IntersectDetProcData = std::vector<IntersectDetProcDataBlock>;
 
 
@@ -71,13 +71,13 @@ namespace dte3607::physengine::solver_dev::level2_2
           params.F,
           params.t_0,
           params.dt
-        );
+          );
 
         if (tc.has_value()) {               // Add possible collision
           intersections.push_back({
             s_id,
             p_id,
-            tc.value() - params.t_0
+            tc.value()
           });
         }
       }
@@ -87,17 +87,17 @@ namespace dte3607::physengine::solver_dev::level2_2
 
 
   void detectCollision ([[maybe_unused]]Params&               params,
-                        [[maybe_unused]]IntersectDetProcData& intersections,
-                        [[maybe_unused]]SphereGeomDataBlock&  sphere,
-                        [[maybe_unused]]size_t                s_id,
-                        [[maybe_unused]]InfPlaneGeomData&     planes,
-                        [[maybe_unused]]size_t                exclude_plane_id)
+                       [[maybe_unused]]IntersectDetProcData& intersections,
+                       [[maybe_unused]]SphereGeomDataBlock&  sphere,
+                       [[maybe_unused]]size_t                s_id,
+                       [[maybe_unused]]InfPlaneGeomData&     planes,
+                       [[maybe_unused]]std::set<size_t>&     exclude_plane_idx)
   {
 
     IntersectDetProcData collisions;
 
     for (size_t p_id=0; p_id < planes.size(); p_id++) {
-      if (p_id == exclude_plane_id) continue;
+      if (exclude_plane_idx.contains(p_id)) continue;
 
       auto plane = planes[p_id];
       auto tc = mechanics::detectCollisionSphereFixedPlane(
@@ -116,7 +116,7 @@ namespace dte3607::physengine::solver_dev::level2_2
         collisions.push_back({
           s_id,
           p_id,
-          tc.value() - params.t_0
+          tc.value()
         });
       }
 
@@ -175,7 +175,7 @@ namespace dte3607::physengine::solver_dev::level2_2
     auto ds = mechanics::computeLinearTrajectory(
                 spheres[s_id].v,
                 params.F,
-                collision.col_tp
+                collision.col_tp - spheres[s_id].t_c
                 ).first;
 
     spheres[s_id].p += ds;
@@ -189,16 +189,17 @@ namespace dte3607::physengine::solver_dev::level2_2
     spheres[s_id].v = new_v;
 
     // UpdateCacheProperties
-    spheres[s_id].t_c += collision.col_tp;
+    spheres[s_id].t_c = collision.col_tp;
 
     // Detect further collision. Add to collisions
+    std::set<size_t> exclude_plane_idx{p_id};
     detectCollision(
       params,
       collisions,
       spheres[s_id],
       s_id,
       planes,
-      p_id);
+      exclude_plane_idx); //std::set(p_id));
 
   }
 
