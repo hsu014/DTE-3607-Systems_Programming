@@ -9,7 +9,6 @@
 namespace dte3607::physengine::fixtures
 {
 
-
   struct FixtureLevel1 {
 
     /*** API concept required types ***/
@@ -77,7 +76,6 @@ namespace dte3607::physengine::fixtures
     /*** Members ***/
     std::vector<Sphere> m_spheres;
     Forces m_gravity;
-
   };
 
 
@@ -102,40 +100,103 @@ namespace dte3607::physengine::fixtures
     /*** API concept required methods ***/
 
     // Environment
-    void setGravity(Forces) {}
+    void setGravity(Forces G) {
+      m_gravity = G;
+    }
+
+    Forces getGravity() const {
+      return m_gravity;
+    }
 
     // RBs
-    size_t              noRigidBodies() const { return {}; }
-    std::vector<size_t> nonFixedSphereRBs() const { return {}; }
-    std::vector<size_t> fixedInfPlaneRBs() const { return {}; }
+    size_t    noRigidBodies() const {
+      return m_rigid_bodies.size();
+    }
+    std::vector<size_t> nonFixedSphereRBs() const {
+      return m_sphere_idx;
+    }
 
-    ValueType rbSphereRadius([[maybe_unused]] size_t s_rid) const { return {}; }
-    Vector3   rbPlaneNormal([[maybe_unused]] size_t p_rid) const { return {}; }
+    std::vector<size_t> fixedInfPlaneRBs() const {
+      return m_plane_idx;
+    }
+
+    ValueType rbSphereRadius(size_t s_rid) const {
+      return m_rigid_bodies[s_rid].radius.value();
+    }
+
+    Vector3   rbSphereVelocity(size_t s_rid) const {
+      return m_rigid_bodies[s_rid].velocity.value();
+    }
+
+    Vector3   rbPlaneNormal(size_t p_rid) const {
+      return m_rigid_bodies[p_rid].normal.value();
+    }
 
     // RB properties
-    types::Point3 globalFramePosition([[maybe_unused]] size_t rid) const
+    types::Point3 globalFramePosition(size_t rid) const
     {
-      return {};
+      return m_rigid_bodies[rid].translation;
     }
+
+    void setGlobalFramePosition(size_t rid, types::Vector3 pos)
+    {
+      m_rigid_bodies[rid].translation = pos;
+    }
+
+
 
 
     /*** Fixture unit-test setup API ***/
 
-    size_t createSphere([[maybe_unused]] ValueType radius      = 1.,
-                        [[maybe_unused]] Vector3   velocity    = {0, 0, 0},
-                        [[maybe_unused]] Vector3   translation = {0, 0, 0})
+    size_t createSphere(ValueType radius      = 1.,
+                        Vector3   velocity    = {0, 0, 0},
+                        Vector3   translation = {0, 0, 0})
     {
-      return {};
+      m_rigid_bodies.push_back({
+        radius,
+        velocity,
+        translation,
+        std::nullopt
+      });
+
+      auto id = m_rigid_bodies.size() - 1;
+      m_sphere_idx.push_back(id);
+
+      return id;
     }
 
-    size_t createFixedInfPlane([[maybe_unused]] Vector3 normal      = {0, 1, 0},
-                               [[maybe_unused]] Vector3 translation = {0, 0, 0})
+    size_t createFixedInfPlane(Vector3 normal      = {0, 1, 0},
+                               Vector3 translation = {0, 0, 0})
     {
-      return {};
+      m_rigid_bodies.push_back({
+        std::nullopt,
+        std::nullopt,
+        translation,
+        normal
+      });
+
+      auto id = m_rigid_bodies.size() - 1;
+      m_plane_idx.push_back(id);
+
+      return id;
     }
 
     /*** END API requirements ***/
+
+    struct RigidBody {
+      std::optional<types::ValueType> radius;
+      std::optional<types::Vector3>   velocity;
+      types::Vector3                  translation;
+      std::optional<types::Vector3>   normal;
+    };
+
+    /*** Members ***/
+    std::vector<RigidBody> m_rigid_bodies;
+    std::vector<size_t> m_sphere_idx;
+    std::vector<size_t> m_plane_idx;
+    Forces m_gravity;
   };
+
 
 
   struct FixtureLevel3 {
@@ -190,6 +251,7 @@ namespace dte3607::physengine::fixtures
 
     /*** END API requirements ***/
   };
+
 
 
   struct FixtureLevel4 {
