@@ -28,10 +28,10 @@ namespace dte3607::physengine::mechanics
       return std::nullopt;
     }
 
-    auto n = blaze::normalize(fplane_n);
-    auto ds = computeLinearTrajectory(sphere_v, external_forces, time).first;
-    auto s = fplane_q + sphere_r * n;
-    auto d = s - sphere_p;
+    types::Vector3 n = blaze::normalize(fplane_n);
+    types::Vector3 ds = computeLinearTrajectory(sphere_v, external_forces, time).first;
+    types::Point3 s = fplane_q + sphere_r * n;
+    types::Point3 d = s - sphere_p;
 
     auto q = blaze::inner(d, n);        // Q = q * n
     auto r = blaze::inner(ds, n);       // R = r * n;
@@ -41,23 +41,6 @@ namespace dte3607::physengine::mechanics
       std::cout << "Something wierd happened (Hit corner?) " << std::endl;
       // return t_0;
       return std::nullopt;
-
-      // types::Duration offset = types::Duration(100);
-      // auto offset_ds = computeLinearTrajectory(sphere_v, external_forces, offset).first;
-
-      // return detectCollisionSphereFixedPlane(
-      //   sphere_tc - offset,
-      //   sphere_p - offset_ds,
-      //   sphere_r,
-      //   sphere_v,
-      //   fplane_q,
-      //   fplane_n,
-      //   external_forces,
-      //   t_0,
-      //   timestep);
-
-
-      //return std::nullopt;
     }
     if (std::abs(r) < eps) {            // Sphere is moving parallel to the plane
       std::cout << "Moving parallel to plane" << std::endl;
@@ -69,8 +52,8 @@ namespace dte3607::physengine::mechanics
       return std::nullopt;
     }
 
-    auto const tp = utils::toDuration(x * time);
-    return t_0 + tp;
+    types::Duration const t_col = utils::toDuration(x * time);
+    return sphere_tc + t_col;
   }
 
 }   // namespace dte3607::physengine::mechanics
