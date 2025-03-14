@@ -9,11 +9,11 @@
 namespace dte3607::physengine::mechanics
 {
 
-
   inline types::Vector3 computeImpactResponseSphereFixedPlane(
     [[maybe_unused]] types::Vector3 const& sphere_v,
     [[maybe_unused]] types::Vector3 const& fplane_n)
   {
+
     auto n = blaze::normalize(fplane_n);
 
     return sphere_v - 2 * blaze::inner(sphere_v, n) * n;

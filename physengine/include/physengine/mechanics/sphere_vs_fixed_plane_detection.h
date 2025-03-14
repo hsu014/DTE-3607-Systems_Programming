@@ -22,9 +22,9 @@ namespace dte3607::physengine::mechanics
     [[maybe_unused]] types::Duration                timestep)
   {
 
-    auto time = timestep - (sphere_tc - t_0);
+    types::Duration time = timestep - (sphere_tc - t_0);
     if (time < types::Duration(0)) {    // Negative time, sphere_tc is after timestep
-
+      std::cout << "Negative time interval " << std::endl;
       return std::nullopt;
     }
 
@@ -38,9 +38,29 @@ namespace dte3607::physengine::mechanics
     auto eps = 1e-5;
 
     if (std::abs(q) < eps) {            // Sphere is touching the plane
+      std::cout << "Something wierd happened (Hit corner?) " << std::endl;
+      // return t_0;
       return std::nullopt;
+
+      // types::Duration offset = types::Duration(100);
+      // auto offset_ds = computeLinearTrajectory(sphere_v, external_forces, offset).first;
+
+      // return detectCollisionSphereFixedPlane(
+      //   sphere_tc - offset,
+      //   sphere_p - offset_ds,
+      //   sphere_r,
+      //   sphere_v,
+      //   fplane_q,
+      //   fplane_n,
+      //   external_forces,
+      //   t_0,
+      //   timestep);
+
+
+      //return std::nullopt;
     }
     if (std::abs(r) < eps) {            // Sphere is moving parallel to the plane
+      std::cout << "Moving parallel to plane" << std::endl;
       return std::nullopt;
     }
 
