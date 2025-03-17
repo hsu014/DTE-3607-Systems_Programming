@@ -49,10 +49,10 @@ namespace dte3607::physengine::solver_dev::level2_3
 
 
 
-  void detectCollisions([[maybe_unused]]Params&               params,
-                        [[maybe_unused]]IntersectDetProcData& intersections,
-                        [[maybe_unused]]SphereGeomData&       spheres,
-                        [[maybe_unused]]InfPlaneGeomData&     planes)
+  void detectCollisions(Params&               params,
+                        IntersectDetProcData& intersections,
+                        SphereGeomData&       spheres,
+                        InfPlaneGeomData&     planes)
   {
 
     for (size_t s_id=0; s_id < spheres.size(); s_id++) {
@@ -86,12 +86,12 @@ namespace dte3607::physengine::solver_dev::level2_3
 
 
 
-  void detectCollision ([[maybe_unused]]Params&               params,
-                        [[maybe_unused]]IntersectDetProcData& intersections,
-                        [[maybe_unused]]SphereGeomDataBlock&  sphere,
-                        [[maybe_unused]]size_t                s_id,
-                        [[maybe_unused]]InfPlaneGeomData&     planes,
-                        [[maybe_unused]]std::set<size_t>&     exclude_plane_idx)
+  void detectCollision(Params&               params,
+                       IntersectDetProcData& intersections,
+                       SphereGeomDataBlock&  sphere,
+                       size_t                s_id,
+                       InfPlaneGeomData&     planes,
+                       std::set<size_t>&     exclude_plane_idx)
   {
 
     IntersectDetProcData collisions;
@@ -119,22 +119,21 @@ namespace dte3607::physengine::solver_dev::level2_3
           tc.value()
         });
       }
-
-      if (collisions.empty()) return;
-
-      // Use first possible collision
-      std::ranges::sort(collisions, [](auto& collision1, auto& collision2){
-        return collision1.col_tp < collision2.col_tp;
-      });
-
-      intersections.push_back(collisions[0]);
-
-      // Resort intersections. NB! intersections is reversed from detectCollisions()
-      std::ranges::sort(intersections, [](auto& intersection1, auto& intersection2){
-        return intersection1.col_tp > intersection2.col_tp;
-      });
-
     }
+
+    if (collisions.empty()) return;
+
+    // Use first possible collision
+    std::ranges::sort(collisions, [](auto& collision1, auto& collision2){
+      return collision1.col_tp < collision2.col_tp;
+    });
+
+    intersections.push_back(collisions[0]);
+
+    // Resort intersections. NB! intersections is reversed from detectCollisions()
+    std::ranges::sort(intersections, [](auto& intersection1, auto& intersection2){
+      return intersection1.col_tp > intersection2.col_tp;
+    });
   }
 
 
@@ -159,10 +158,10 @@ namespace dte3607::physengine::solver_dev::level2_3
 
 
 
-  void handleCollision([[maybe_unused]]Params&                    params,
-                       [[maybe_unused]]IntersectDetProcData&      collisions,
-                       [[maybe_unused]]SphereGeomData&            spheres,
-                       [[maybe_unused]]InfPlaneGeomData&          planes)
+  void handleCollision(Params&                    params,
+                       IntersectDetProcData&      collisions,
+                       SphereGeomData&            spheres,
+                       InfPlaneGeomData&          planes)
   {
 
     auto collision = collisions.back();
@@ -178,17 +177,15 @@ namespace dte3607::physengine::solver_dev::level2_3
                 collision.col_tp - spheres[s_id].t_c
                 ).first;
 
-    spheres[s_id].p += ds;
-
     // ImpactResponse
     auto new_v = mechanics::computeImpactResponseSphereFixedPlane(
       spheres[s_id].v,
       planes[p_id].n
       );
 
-    spheres[s_id].v = new_v;
-
     // UpdateCacheProperties
+    spheres[s_id].p += ds;
+    spheres[s_id].v = new_v;
     spheres[s_id].t_c = collision.col_tp;
 
     // Detect further collision. Add to collisions
@@ -199,15 +196,14 @@ namespace dte3607::physengine::solver_dev::level2_3
       spheres[s_id],
       s_id,
       planes,
-      exclude_plane_idx); //std::set(p_id));
+      exclude_plane_idx);
 
   }
 
 
 
-  void simulateObjects([[maybe_unused]]Params&           params,
-                       [[maybe_unused]]SphereGeomData&   spheres,
-                       [[maybe_unused]]InfPlaneGeomData& planes)
+  void simulateObjects(Params&           params,
+                       SphereGeomData&   spheres)
   {
 
     for (size_t i = 0; i<spheres.size(); i++) {
@@ -226,8 +222,8 @@ namespace dte3607::physengine::solver_dev::level2_3
 
 
   template <concepts::SolverFixtureLevel2 Fixture_T>
-  void solve([[maybe_unused]] Fixture_T&         scenario,
-             [[maybe_unused]] types::NanoSeconds timestep)
+  void solve(Fixture_T&         scenario,
+             types::NanoSeconds timestep)
   {
 
     Params params = {
@@ -276,7 +272,7 @@ namespace dte3607::physengine::solver_dev::level2_3
       handleCollision(params, intersections, spheres, planes);
     }
 
-    simulateObjects(params, spheres, planes);
+    simulateObjects(params, spheres);
 
     // Update scenario
     for (size_t i = 0; i<spheres.size(); i++) {
@@ -289,3 +285,4 @@ namespace dte3607::physengine::solver_dev::level2_3
 
 
 #endif // DTE3607_PHYSENGINE_SOLVER_DEVELOPMENT_LEVEL2_3_H
+// [](){}
