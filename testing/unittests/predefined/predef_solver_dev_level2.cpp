@@ -1,5 +1,5 @@
 #include <physengine/solvers/solver_dev_level2_2.h>
-#include <physengine/solvers/solver_dev_level2_3.h>
+#include <physengine/solvers/solver_dev_level2_2.h>
 #include <physengine/bits/fixtures.h>
 #include <physengine/bits/types.h>
 
@@ -54,7 +54,7 @@ struct SolverDevLevel2Step1_Fixture001 : ::testing::Test {
 
 TEST_F(SolverDevLevel2Step1_Fixture001, Test001)
 {
-  solver_dev::level2_3::solve(*m_scenario, 1s);
+  solver_dev::level2_2::solve(*m_scenario, 1s);
   std::cout << "Test 1! " << std::endl;
 
   auto no_rbs = m_scenario->noRigidBodies();
@@ -102,7 +102,7 @@ struct SolverDevLevel2Step1_Fixture002 : ::testing::Test {
 
 TEST_F(SolverDevLevel2Step1_Fixture002, Test001)
 {
-  solver_dev::level2_3::solve(*m_scenario, 1s);
+  solver_dev::level2_2::solve(*m_scenario, 1s);
   std::cout << "Test 2! " << std::endl;
 
   // Expect to be inbetween the planes
@@ -150,7 +150,7 @@ struct SolverDevLevel2Step2_Fixture001 : ::testing::Test {
 
 TEST_F(SolverDevLevel2Step2_Fixture001, Test001)
 {
-  solver_dev::level2_3::solve(*m_scenario, 1s);
+  solver_dev::level2_2::solve(*m_scenario, 1s);
   std::cout << "Test 3! " << std::endl;
 
   for (auto const& s_rid : m_scenario->nonFixedSphereRBs()) {
@@ -201,7 +201,7 @@ TEST_F(SolverDevLevel2Step2_Fixture001, Test001)
 
 // TEST_F(SolverDevLevel2Step2_Fixture002, Test001)
 // {
-//   solver_dev::level2_3::solve(*m_scenario, 1s);
+//   solver_dev::level2_2::solve(*m_scenario, 1s);
 
 //   // Expect to be inbetween the planes
 //   for (auto const& s_rid : m_scenario->nonFixedSphereRBs()) {
@@ -290,7 +290,7 @@ struct SolverDevLevel2Step2_Fixture003 : ::testing::Test {
 
 TEST_F(SolverDevLevel2Step2_Fixture003, Test001)
 {
-  solver_dev::level2_3::solve(*m_scenario, 1s);
+  solver_dev::level2_2::solve(*m_scenario, 1s);
   std::cout << "Test 5! " << std::endl;
 
   // Expect to be inbetween the planes
@@ -356,7 +356,7 @@ struct SolverDevLevel2Step2_Fixture004 : ::testing::Test {
 
 TEST_F(SolverDevLevel2Step2_Fixture004, Test001)
 {
-  solver_dev::level2_3::solve(*m_scenario, 1s);
+  solver_dev::level2_2::solve(*m_scenario, 1s);
   std::cout << "Test 6! " << std::endl;
 
   // Expect to be inbetween the planes
