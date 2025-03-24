@@ -215,27 +215,19 @@ namespace dte3607::physengine::solver_dev::level2_3
 
 
 
-  void sortAndReduce(IntersectDetProcData& intersections,
-                     std::set<size_t>& new_collisions) {
+  void sortAndReduce(IntersectDetProcData& intersections) {
 
     std::ranges::sort(intersections, [](auto& intersection1, auto& intersection2){
       return intersection1.col_tp < intersection2.col_tp;
     });
 
     std::set<size_t> visited;
-    // std::set<size_t> new_collisions;
-    /*
-     * Add check for second sphere id
-     * Done?
-     */
-    std::erase_if(intersections, [&visited, &new_collisions](auto& intersection){
+
+    std::erase_if(intersections, [&visited](auto& intersection){
       if (visited.contains(intersection.sphere1_id)) {
         return true;
       }
       else if (intersection.sphere2_id.has_value() && visited.contains(intersection.sphere2_id.value())) {
-        if (!visited.contains(intersection.sphere1_id)) {
-          new_collisions.insert(intersection.sphere1_id);
-        }
         return true;
       }
       else {
@@ -276,12 +268,6 @@ namespace dte3607::physengine::solver_dev::level2_3
 
     bool                          two_sphere_col = s2_id.has_value();
 
-    // auto& sp1 = spheres[s1_id].p;
-    // if ((std::abs(sp1[0]) > 9) || (std::abs(sp1[1]) > 9) || (std::abs(sp1[2]) > 9) ){
-    //   std::cout << "Sphere " << s1_id+planes.size() << " outside planes (Before collision)" << std::endl;
-    //   std::cout << "Pos: " << sp1[0] << ", " << sp1[1] << ", " << sp1[2] << std::endl;
-    // }
-
     //  Simulate Object
     ds1 = mechanics::computeLinearTrajectory(
             spheres[s1_id].v,
@@ -289,28 +275,13 @@ namespace dte3607::physengine::solver_dev::level2_3
             collision.col_tp - spheres[s1_id].t_c
             ).first;
 
-    // spheres[s1_id].p += ds1;
-
-    // types::Duration dt1 = collision.col_tp - spheres[s1_id].t_c;
-    // if (utils::toDtScalar(dt1) < 0) std::cout << "dt1: " << dt1 << std::endl;
-
     if (two_sphere_col) {
       ds2 = mechanics::computeLinearTrajectory(
               spheres[s2_id.value()].v,
               params.F,
               collision.col_tp - spheres[s2_id.value()].t_c
               ).first;
-
-      // spheres[s2_id.value()].p += ds2.value();
-
-      // std::cout << "Ball vs ball collision" << std::endl;
-      // types::Duration dt2 = collision.col_tp - spheres[s2_id.value()].t_c;
-      // if (utils::toDtScalar(dt2) < 0) std::cout << "dt2: " << dt2 << std::endl;
     }
-    // else {
-    //   ds2 = std::nullopt;      // Not needed!
-    //   // std::cout << "Ball vs plane collision" << std::endl;
-    // }
 
     // ImpactResponse
     if (two_sphere_col) {   // Ball vs ball collision
@@ -347,27 +318,6 @@ namespace dte3607::physengine::solver_dev::level2_3
     }
     else {
       exclude_plane_idx.insert(p_id.value());
-    }
-
-    // Detect further collision. Add to collisions
-    detectCollision(
-      params,
-      intersections,
-      spheres,
-      planes,
-      s1_id,
-      exclude_sphere_idx,
-      exclude_plane_idx);
-
-    if (two_sphere_col) {
-      detectCollision(
-        params,
-        intersections,
-        spheres,
-        planes,
-        s2_id.value(),
-        exclude_sphere_idx,
-        exclude_plane_idx);
     }
   }
 
@@ -436,65 +386,35 @@ namespace dte3607::physengine::solver_dev::level2_3
 
     detectCollisions(params, intersections, spheres, planes);
 
-    std::set<size_t> temp{};
-    sortAndReduce(intersections, temp);
+    sortAndReduce(intersections);
 
-    int counter = 0;
+    // int counter = 0;
     while (!intersections.empty()) {
       handleCollision(params, intersections, spheres, planes);
 
-      // detectCollisions(params, intersections, spheres, planes); // testing
+      detectCollisions(params, intersections, spheres, planes); // The 'it just works' way
 
-      std::set<size_t> new_collisions{};
-      sortAndReduce(intersections, new_collisions);
+      sortAndReduce(intersections);
 
-      // Test new collisions:
-      if (!new_collisions.empty()) {
-        for (size_t id : new_collisions) {
-          std::cout << "New collision: " << id << std::endl;
-          std::set<size_t> exclude_sphere_idx{id};
-          std::set<size_t> exclude_plane_idx{};
-
-          detectCollision(
-            params,
-            intersections,
-            spheres,
-            planes,
-            id,
-            exclude_sphere_idx,
-            exclude_plane_idx);
-        }
-        sortAndReduce(intersections, temp); // Only sort?
-      }
-
-      std::cout << "After handleCollisions() number " << ++counter << std::endl;
+      // std::cout << "After handleCollisions() number " << ++counter << std::endl;
       // printIntersections(params, intersections);
 
-
-      // ~~Print position if sphere is outside of planes~~
+      // // ~~Print position if sphere is outside of planes~~
       // for (size_t i=0; i < spheres.size(); i++ ) {
       //   auto sp = spheres[i].p;
       //   auto lim = 10 - spheres[i].r;
       //   if (std::abs(sp[0])>lim || std::abs(sp[1])>lim || std::abs(sp[1])>lim ) {
       //     std::cout << std::endl;
       //     std::cout << "After collision: " << std::endl;
-      //     std::cout << "Sphere " << i /*+planes.size()*/ << " outside plane" << std::endl;
+      //     std::cout << "Sphere " << i << " outside plane" << std::endl;
       //     std::cout << "Pos: " << sp[0] << ", " << sp[1] << ", " << sp[2] << std::endl;
       //   }
       // }
 
     }
 
-    // std::cout << "After:" << std::endl;
+    // std::cout << "After Aaaaaaaall:" << std::endl; // Wonderwall
     // detectCollisions(params, intersections, spheres, planes); // Remaining collisions after handleCollision done
-
-    // for (size_t i=0; i < intersections.size(); i++ ) {
-    //   std::cout << "Collision for sphere " << intersections[i].sphere1_id/* + planes.size()*/ << std::endl;
-    //   if (intersections[i].sphere2_id.has_value()) {
-    //     std::cout << "Collision* for sphere " << intersections[i].sphere2_id.value()/* + planes.size()*/ << std::endl;
-    //   }
-    // }
-
     // printIntersections(params, intersections);
 
     simulateObjects(params, spheres);
@@ -503,8 +423,8 @@ namespace dte3607::physengine::solver_dev::level2_3
     // std::cout << "After simulateObjects " << std::endl;
     // for (size_t i=0; i < spheres.size(); i++ ) {
     //   auto sp = spheres[i].p;
-    //   if (std::abs(sp[0])>9 || std::abs(sp[1])>9 || std::abs(sp[1])>9 ) {
-    //     std::cout << "Sphere " << i /*+planes.size()*/ << " outside plane" << std::endl;
+    //   if (std::abs(sp[0])>9.1 || std::abs(sp[1])>9.1 || std::abs(sp[1])>9.1 ) {
+    //     std::cout << "Sphere " << i << " outside plane" << std::endl;
     //     std::cout << "Pos: " << sp[0] << ", " << sp[1] << ", " << sp[2] << std::endl;
     //   }
     // }
