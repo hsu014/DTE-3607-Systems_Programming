@@ -36,8 +36,8 @@ namespace dte3607::physengine::mechanics
     auto ds_1 = computeLinearTrajectory(s1_v, external_forces, time_1).first;
     auto ds_2 = computeLinearTrajectory(s2_v, external_forces, time_2).first;
 
-    auto Q = s2_p - s1_p;
-    auto R = ds_2 - ds_1;
+    types::Vector3 Q = s2_p - s1_p;
+    types::Vector3 R = ds_2 - ds_1;
     auto eps = 1e-5;
 
     auto QQ_inner = blaze::inner(Q, Q);
@@ -48,11 +48,17 @@ namespace dte3607::physengine::mechanics
 
     if (QQ_inner - r_sqr < eps) {
       // Spheres are touching
+      // std::cout << "Spheres are touching" << std::endl;
       return std::nullopt;
     }
 
     if (RR_inner < eps) {
-      // Spheres are moving (almost) in parallel
+      // Spheres are moving (almost) in parallell
+      std::cout << "Spheres are moving (almost) in parallell" << std::endl;
+      // std::cout << "R = " << R[0] << ", " << R[1] << ", " << R[2] << std::endl;
+      // std::cout << "Sphere 1: p(x)=" << s1_p[0] << ", v(x)=" << s1_v[0] << std::endl;
+      // std::cout << "Sphere 2: p(x)=" << s2_p[0] << ", v(x)=" << s2_v[0] << std::endl;
+
       return std::nullopt;
     }
 
@@ -67,8 +73,14 @@ namespace dte3607::physengine::mechanics
       return std::nullopt;
     }
 
-    auto const tp = utils::toDuration(x * time_1);
-    return t_0 + tp;
+    // std::cout << "Spheres colliding" << std::endl;
+
+    // std::cout << "R = " << R[0] << ", " << R[1] << ", " << R[2] << std::endl;
+    // std::cout << "Sphere 1: p(x)=" << s1_p[0] << ", v(x)=" << s1_v[0] << std::endl;
+    // std::cout << "Sphere 2: p(x)=" << s2_p[0] << ", v(x)=" << s2_v[0] << std::endl;
+
+    types::Duration const t_col = utils::toDuration(x * time_1);
+    return s1_tc + t_col;
   }
 
 
