@@ -38,12 +38,11 @@ namespace dte3607::physengine::mechanics
     auto eps = 1e-5;
 
     if (std::abs(q) < eps) {            // Sphere is touching the plane
-      std::cout << "Something wierd happened (Hit corner?) " << std::endl;
-      // return t_0;
+      // std::cout << "Something wierd happened (Hit corner?)";// << std::endl;
       return std::nullopt;
     }
     if (std::abs(r) < eps) {            // Sphere is moving parallel to the plane
-      std::cout << "Moving parallel to plane" << std::endl;
+      // std::cout << "Moving parallel to plane" << std::endl;
       return std::nullopt;
     }
 

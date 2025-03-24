@@ -54,10 +54,7 @@ namespace dte3607::physengine::mechanics
 
     if (RR_inner < eps) {
       // Spheres are moving (almost) in parallell
-      std::cout << "Spheres are moving (almost) in parallell" << std::endl;
-      // std::cout << "R = " << R[0] << ", " << R[1] << ", " << R[2] << std::endl;
-      // std::cout << "Sphere 1: p(x)=" << s1_p[0] << ", v(x)=" << s1_v[0] << std::endl;
-      // std::cout << "Sphere 2: p(x)=" << s2_p[0] << ", v(x)=" << s2_v[0] << std::endl;
+      // std::cout << "Spheres are moving (almost) in parallell" << std::endl;
 
       return std::nullopt;
     }
@@ -72,12 +69,6 @@ namespace dte3607::physengine::mechanics
       // Collision outside of timestep
       return std::nullopt;
     }
-
-    // std::cout << "Spheres colliding" << std::endl;
-
-    // std::cout << "R = " << R[0] << ", " << R[1] << ", " << R[2] << std::endl;
-    // std::cout << "Sphere 1: p(x)=" << s1_p[0] << ", v(x)=" << s1_v[0] << std::endl;
-    // std::cout << "Sphere 2: p(x)=" << s2_p[0] << ", v(x)=" << s2_v[0] << std::endl;
 
     types::Duration const t_col = utils::toDuration(x * time_1);
     return s1_tc + t_col;
