@@ -354,14 +354,12 @@ namespace dte3607::physengine::solver_dev::level2_3
     IntersectDetProcData intersections;
 
     detectAllCollisions(params, intersections, spheres, planes);
-
-    // std::set<size_t> temp{};
     sortAndReduce(intersections);
 
     while (!intersections.empty()) {
       handleCollision(params, intersections, spheres, planes);
 
-      // Set of 'active' spheres bafore sortAndReduce()
+      // Set of 'active' spheres before sortAndReduce()
       std::set<size_t> active_before;
       for (auto col : intersections) {
         active_before.insert(col.sphere1_id);
@@ -382,7 +380,7 @@ namespace dte3607::physengine::solver_dev::level2_3
       }
 
       bool new_collisions_added = false;
-      // New collision for s_id in active_before but not in active_after
+      // New collision for spheres in active_before, but not in active_after
       for (auto id : active_before){
         if (!active_after.contains(id)){
           new_collisions_added = true;
