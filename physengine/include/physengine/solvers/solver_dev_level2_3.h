@@ -164,31 +164,18 @@ namespace dte3607::physengine::solver_dev::level2_3
 
 
 
-  void sortAndReduce(IntersectDetProcData& intersections,
-                     std::set<size_t>&     new_collisions) {
+  void sortAndReduce(IntersectDetProcData& intersections) {
 
     std::ranges::sort(intersections, [](auto& intersection1, auto& intersection2){
       return intersection1.col_tp < intersection2.col_tp;
     });
 
     std::set<size_t> visited;
-    std::erase_if(intersections, [&visited, &new_collisions](auto& intersection){
+    std::erase_if(intersections, [&visited](auto& intersection){
       if (visited.contains(intersection.sphere1_id)) {
-        // Test for future collisions to add back in
-        if (intersection.sphere2_id.has_value()) {
-          if (!visited.contains(intersection.sphere2_id.value())) {
-            new_collisions.insert(intersection.sphere2_id.value());
-          }
-        }
-
         return true;
       }
       else if (intersection.sphere2_id.has_value() && visited.contains(intersection.sphere2_id.value())) {
-        // Test for future collisions to add back in
-        if (!visited.contains(intersection.sphere1_id)) {
-          new_collisions.insert(intersection.sphere1_id);
-        }
-
         return true;
       }
       else {
@@ -368,19 +355,37 @@ namespace dte3607::physengine::solver_dev::level2_3
 
     detectAllCollisions(params, intersections, spheres, planes);
 
-    std::set<size_t> temp{};
-    sortAndReduce(intersections, temp);
+    // std::set<size_t> temp{};
+    sortAndReduce(intersections);
 
     while (!intersections.empty()) {
       handleCollision(params, intersections, spheres, planes);
 
-      // Spheres to get new collisions after being 'lost' during sortAndReduce
-      std::set<size_t> new_collisions{};
-      sortAndReduce(intersections, new_collisions);
+      // Set of 'active' spheres bafore sortAndReduce()
+      std::set<size_t> active_before;
+      for (auto col : intersections) {
+        active_before.insert(col.sphere1_id);
+        if (col.sphere2_id.has_value()){
+          active_before.insert(col.sphere2_id.value());
+        }
+      }
 
-      // Test new collisions:
-      if (!new_collisions.empty()) {
-        for (size_t id : new_collisions) {
+      sortAndReduce(intersections);
+
+      // Set of 'active' spheres after sortAndReduce()
+      std::set<size_t> active_after;
+      for (auto col : intersections) {
+        active_after.insert(col.sphere1_id);
+        if (col.sphere2_id.has_value()){
+          active_after.insert(col.sphere2_id.value());
+        }
+      }
+
+      bool new_collisions_added = false;
+      // New collision for s_id in active_before but not in active_after
+      for (auto id : active_before){
+        if (!active_after.contains(id)){
+          new_collisions_added = true;
           std::set<size_t> exclude_sphere_idx{id};
           std::set<size_t> exclude_plane_idx{};
 
@@ -393,9 +398,8 @@ namespace dte3607::physengine::solver_dev::level2_3
             exclude_sphere_idx,
             exclude_plane_idx);
         }
-        sortAndReduce(intersections, temp);
       }
-
+      if (new_collisions_added) sortAndReduce(intersections);
     }
 
     simulateObjects(params, spheres);
