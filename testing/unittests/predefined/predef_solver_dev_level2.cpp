@@ -462,7 +462,6 @@ struct SolverDevLevel2Step3_Fixture002 : ::testing::Test {
     // Set up spheres
     m_scenario->createSphere(1.0, {21, 0, 0}, {-5, 0, 0});
     m_scenario->createSphere(1.0, {-21, 0, 0}, {5, 0, 0});
-
   }
   void TearDown() final { m_scenario.release(); }
 };
@@ -516,9 +515,6 @@ struct SolverDevLevel2Step3_Fixture003 : ::testing::Test {
     m_scenario->createSphere(0.9, {15, 7.56572, 0}, {-2, 0, 0} );
     m_scenario->createSphere(0.9, {19, 7.41067, 0}, {-2, -2, 0} );
     m_scenario->createSphere(0.9, {19, 7.41067, 0}, {2, -2, 0} );
-
-
-
   }
   void TearDown() final { m_scenario.release(); }
 };

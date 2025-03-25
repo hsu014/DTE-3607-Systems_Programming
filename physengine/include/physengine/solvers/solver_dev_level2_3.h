@@ -43,11 +43,11 @@ namespace dte3607::physengine::solver_dev::level2_3
 
 
   struct IntersectDetProcDataBlock {
-      size_t                      sphere1_id;       // Sphere 1 id
-      std::optional<size_t>       sphere2_id;       // Sphere 2 id
-      std::optional<size_t>       plane_id;         // Inf plane id
-      types::HighResolutionTP     col_tp;           // Intersection time
-    };
+    size_t                        sphere1_id;       // Sphere 1 id
+    std::optional<size_t>         sphere2_id;       // Sphere 2 id
+    std::optional<size_t>         plane_id;         // Inf plane id
+    types::HighResolutionTP       col_tp;           // Intersection time
+  };
   using IntersectDetProcData = std::vector<IntersectDetProcDataBlock>;
 
 
@@ -141,10 +141,10 @@ namespace dte3607::physengine::solver_dev::level2_3
 
 
 
-  void detectCollisions(Params&               params,
-                        IntersectDetProcData& intersections,
-                        SphereGeomData&       spheres,
-                        InfPlaneGeomData&     planes)
+  void detectAllCollisions(Params&               params,
+                           IntersectDetProcData& intersections,
+                           SphereGeomData&       spheres,
+                           InfPlaneGeomData&     planes)
   {
 
     for (size_t s_id=0; s_id < spheres.size(); s_id++) {
@@ -165,7 +165,7 @@ namespace dte3607::physengine::solver_dev::level2_3
 
 
   void sortAndReduce(IntersectDetProcData& intersections,
-                     std::set<size_t>& new_collisions) {
+                     std::set<size_t>&     new_collisions) {
 
     std::ranges::sort(intersections, [](auto& intersection1, auto& intersection2){
       return intersection1.col_tp < intersection2.col_tp;
@@ -245,7 +245,7 @@ namespace dte3607::physengine::solver_dev::level2_3
     }
 
     // ImpactResponse
-    if (two_sphere_col) {       // Ball vs ball collision
+    if (two_sphere_col) {
       auto s1 = spheres[s1_id];
       auto s2 = spheres[s2_id.value()];
       auto [v1, v2] = mechanics::computeImpactResponseSphereSphere(
@@ -259,7 +259,7 @@ namespace dte3607::physengine::solver_dev::level2_3
       new_v1 = v1;
       new_v2 = v2;
     }
-    else {                      // Ball vs fixed plane collision
+    else {
       new_v1 = mechanics::computeImpactResponseSphereFixedPlane(
         spheres[s1_id].v,
         planes[p_id.value()].n
@@ -305,8 +305,8 @@ namespace dte3607::physengine::solver_dev::level2_3
 
 
 
-  void simulateObjects(Params&           params,
-                       SphereGeomData&   spheres)
+  void simulateObjects(Params&         params,
+                       SphereGeomData& spheres)
   {
 
     for (size_t i = 0; i<spheres.size(); i++) {
@@ -336,7 +336,7 @@ namespace dte3607::physengine::solver_dev::level2_3
       timestep
     };
 
-    SphereGeomData spheres;
+    SphereGeomData   spheres;
     InfPlaneGeomData planes;
 
     auto sphere_idx = scenario.nonFixedSphereRBs();
@@ -366,7 +366,7 @@ namespace dte3607::physengine::solver_dev::level2_3
 
     IntersectDetProcData intersections;
 
-    detectCollisions(params, intersections, spheres, planes);
+    detectAllCollisions(params, intersections, spheres, planes);
 
     std::set<size_t> temp{};
     sortAndReduce(intersections, temp);
