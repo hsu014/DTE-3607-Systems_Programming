@@ -45,33 +45,10 @@ namespace dte3607::physengine::solver_dev::level2_3
   struct IntersectDetProcDataBlock {
       size_t                      sphere1_id;       // Sphere 1 id
       std::optional<size_t>       sphere2_id;       // Sphere 2 id
-      std::optional<size_t>       plane_id;         // Inf plane data
+      std::optional<size_t>       plane_id;         // Inf plane id
       types::HighResolutionTP     col_tp;           // Intersection time
     };
   using IntersectDetProcData = std::vector<IntersectDetProcDataBlock>;
-
-
-
-  void printIntersections(Params& params, IntersectDetProcData& intersections) {
-    // ~~Print content of intersections:~~
-    std::set<size_t> active;
-
-    for (auto col : intersections) {
-      std::cout << "S1: " << col.sphere1_id;
-      active.insert(col.sphere1_id);
-      if (col.sphere2_id.has_value()) {
-        std::cout << ", S2: " << col.sphere2_id.value();
-        active.insert(col.sphere2_id.value());
-      }
-      else {
-        std::cout << ", Pl: " << col.plane_id.value();
-      }
-      std::cout << ", T: " << col.col_tp - params.t_0 << std::endl;
-    }
-    std::cout << "Active spheres: ";
-    for (auto i : active) std::cout << i << " ";
-    std::cout << std::endl << std::endl;
-  }
 
 
 
@@ -86,8 +63,6 @@ namespace dte3607::physengine::solver_dev::level2_3
 
     IntersectDetProcData collisions;
     auto const sphere = spheres[cur_s_id];
-
-    // For sphere. Vector of current spheres in the future?
 
     // Collision with other spheres
     for (size_t s_id=0; s_id < spheres.size(); s_id++ ) {
@@ -127,13 +102,6 @@ namespace dte3607::physengine::solver_dev::level2_3
         );
 
       if (tc.has_value()) {               // Add possible collision
-        // collisions.push_back({
-        //   cur_s_id,
-        //   s_id,
-        //   std::nullopt,
-        //   tc.value()
-        // });
-
         intersections.push_back({
           cur_s_id,
           s_id,
@@ -161,13 +129,6 @@ namespace dte3607::physengine::solver_dev::level2_3
         );
 
       if (tc.has_value()) {               // Add possible collision
-        // collisions.push_back({
-        //   cur_s_id,
-        //   std::nullopt,
-        //   p_id,
-        //   tc.value()
-        // });
-
         intersections.push_back({
           cur_s_id,
           std::nullopt,
@@ -176,18 +137,6 @@ namespace dte3607::physengine::solver_dev::level2_3
         });
       }
     }
-
-    // std::cout << "Possible collisions:" << std::endl;
-    // printIntersections(params, collisions);
-
-    // if (collisions.empty()) return;
-
-    // // Use first possible collision
-    // std::ranges::sort(collisions, [](auto& collision1, auto& collision2){
-    //   return collision1.col_tp < collision2.col_tp;
-    // });
-
-    // intersections.push_back(collisions.front());
   }
 
 
@@ -215,19 +164,31 @@ namespace dte3607::physengine::solver_dev::level2_3
 
 
 
-  void sortAndReduce(IntersectDetProcData& intersections) {
+  void sortAndReduce(IntersectDetProcData& intersections,
+                     std::set<size_t>& new_collisions) {
 
     std::ranges::sort(intersections, [](auto& intersection1, auto& intersection2){
       return intersection1.col_tp < intersection2.col_tp;
     });
 
     std::set<size_t> visited;
-
-    std::erase_if(intersections, [&visited](auto& intersection){
+    std::erase_if(intersections, [&visited, &new_collisions](auto& intersection){
       if (visited.contains(intersection.sphere1_id)) {
+        // Test for future collisions to add back in
+        if (intersection.sphere2_id.has_value()) {
+          if (!visited.contains(intersection.sphere2_id.value())) {
+            new_collisions.insert(intersection.sphere2_id.value());
+          }
+        }
+
         return true;
       }
       else if (intersection.sphere2_id.has_value() && visited.contains(intersection.sphere2_id.value())) {
+        // Test for future collisions to add back in
+        if (!visited.contains(intersection.sphere1_id)) {
+          new_collisions.insert(intersection.sphere1_id);
+        }
+
         return true;
       }
       else {
@@ -284,7 +245,7 @@ namespace dte3607::physengine::solver_dev::level2_3
     }
 
     // ImpactResponse
-    if (two_sphere_col) {   // Ball vs ball collision
+    if (two_sphere_col) {       // Ball vs ball collision
       auto s1 = spheres[s1_id];
       auto s2 = spheres[s2_id.value()];
       auto [v1, v2] = mechanics::computeImpactResponseSphereSphere(
@@ -298,7 +259,7 @@ namespace dte3607::physengine::solver_dev::level2_3
       new_v1 = v1;
       new_v2 = v2;
     }
-    else {                    // Ball vs fixed plane collision
+    else {                      // Ball vs fixed plane collision
       new_v1 = mechanics::computeImpactResponseSphereFixedPlane(
         spheres[s1_id].v,
         planes[p_id.value()].n
@@ -318,6 +279,27 @@ namespace dte3607::physengine::solver_dev::level2_3
     }
     else {
       exclude_plane_idx.insert(p_id.value());
+    }
+
+    // Detect further collision. Add to collisions
+    detectCollision(
+      params,
+      intersections,
+      spheres,
+      planes,
+      s1_id,
+      exclude_sphere_idx,
+      exclude_plane_idx);
+
+    if (two_sphere_col) {
+      detectCollision(
+        params,
+        intersections,
+        spheres,
+        planes,
+        s2_id.value(),
+        exclude_sphere_idx,
+        exclude_plane_idx);
     }
   }
 
@@ -386,49 +368,37 @@ namespace dte3607::physengine::solver_dev::level2_3
 
     detectCollisions(params, intersections, spheres, planes);
 
-    sortAndReduce(intersections);
+    std::set<size_t> temp{};
+    sortAndReduce(intersections, temp);
 
-    // int counter = 0;
     while (!intersections.empty()) {
       handleCollision(params, intersections, spheres, planes);
 
-      detectCollisions(params, intersections, spheres, planes); // The 'it just works' way
+      // Spheres to get new collisions after being 'lost' during sortAndReduce
+      std::set<size_t> new_collisions{};
+      sortAndReduce(intersections, new_collisions);
 
-      sortAndReduce(intersections);
+      // Test new collisions:
+      if (!new_collisions.empty()) {
+        for (size_t id : new_collisions) {
+          std::set<size_t> exclude_sphere_idx{id};
+          std::set<size_t> exclude_plane_idx{};
 
-      // std::cout << "After handleCollisions() number " << ++counter << std::endl;
-      // printIntersections(params, intersections);
-
-      // // ~~Print position if sphere is outside of planes~~
-      // for (size_t i=0; i < spheres.size(); i++ ) {
-      //   auto sp = spheres[i].p;
-      //   auto lim = 10 - spheres[i].r;
-      //   if (std::abs(sp[0])>lim || std::abs(sp[1])>lim || std::abs(sp[1])>lim ) {
-      //     std::cout << std::endl;
-      //     std::cout << "After collision: " << std::endl;
-      //     std::cout << "Sphere " << i << " outside plane" << std::endl;
-      //     std::cout << "Pos: " << sp[0] << ", " << sp[1] << ", " << sp[2] << std::endl;
-      //   }
-      // }
+          detectCollision(
+            params,
+            intersections,
+            spheres,
+            planes,
+            id,
+            exclude_sphere_idx,
+            exclude_plane_idx);
+        }
+        sortAndReduce(intersections, temp);
+      }
 
     }
 
-    // std::cout << "After Aaaaaaaall:" << std::endl; // Wonderwall
-    // detectCollisions(params, intersections, spheres, planes); // Remaining collisions after handleCollision done
-    // printIntersections(params, intersections);
-
     simulateObjects(params, spheres);
-
-    // std::cout << std::endl;
-    // std::cout << "After simulateObjects " << std::endl;
-    // for (size_t i=0; i < spheres.size(); i++ ) {
-    //   auto sp = spheres[i].p;
-    //   if (std::abs(sp[0])>9.1 || std::abs(sp[1])>9.1 || std::abs(sp[1])>9.1 ) {
-    //     std::cout << "Sphere " << i << " outside plane" << std::endl;
-    //     std::cout << "Pos: " << sp[0] << ", " << sp[1] << ", " << sp[2] << std::endl;
-    //   }
-    // }
-    // std::cout << std::endl;
 
     // Update scenario
     for (size_t i = 0; i<spheres.size(); i++) {
