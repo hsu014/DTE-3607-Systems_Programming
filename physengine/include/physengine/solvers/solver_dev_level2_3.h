@@ -299,6 +299,7 @@ namespace dte3607::physengine::solver_dev::level2_3
     for (size_t i = 0; i<spheres.size(); i++) {
 
       types::Duration timestep = (params.t_0 + params.dt) - spheres[i].t_c;
+      // types::Duration timestep = params.dt - (spheres[i].t_c - params.t_0);
 
       auto ds = mechanics::computeLinearTrajectory(
                   spheres[i].v,
@@ -308,6 +309,21 @@ namespace dte3607::physengine::solver_dev::level2_3
 
       spheres[i].p += ds;
     }
+  }
+
+
+
+  std::set<size_t> activeSpheres(IntersectDetProcData& intersections){
+
+    std::set<size_t> active;
+    for (auto col : intersections) {
+      active.insert(col.sphere1_id);
+      if (col.sphere2_id.has_value()){
+        active.insert(col.sphere2_id.value());
+      }
+    }
+
+    return active;
   }
 
 
@@ -359,25 +375,11 @@ namespace dte3607::physengine::solver_dev::level2_3
     while (!intersections.empty()) {
       handleCollision(params, intersections, spheres, planes);
 
-      // Set of 'active' spheres before sortAndReduce()
-      std::set<size_t> active_before;
-      for (auto col : intersections) {
-        active_before.insert(col.sphere1_id);
-        if (col.sphere2_id.has_value()){
-          active_before.insert(col.sphere2_id.value());
-        }
-      }
+      std::set<size_t> active_before = activeSpheres(intersections);
 
       sortAndReduce(intersections);
 
-      // Set of 'active' spheres after sortAndReduce()
-      std::set<size_t> active_after;
-      for (auto col : intersections) {
-        active_after.insert(col.sphere1_id);
-        if (col.sphere2_id.has_value()){
-          active_after.insert(col.sphere2_id.value());
-        }
-      }
+      std::set<size_t> active_after = activeSpheres(intersections);
 
       bool new_collisions_added = false;
       // New collision for spheres in active_before, but not in active_after
