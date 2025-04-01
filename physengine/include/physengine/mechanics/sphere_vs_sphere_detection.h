@@ -11,17 +11,19 @@ namespace dte3607::physengine::mechanics
 {
 
   inline std::optional<types::HighResolutionTP> detectCollisionSphereSphere(
-    [[maybe_unused]] types::HighResolutionTP const& s1_tc,
-    [[maybe_unused]] types::Point3 const&           s1_p,
-    [[maybe_unused]] types::ValueType               s1_r,
-    [[maybe_unused]] types::Vector3 const&          s1_v,
-    [[maybe_unused]] types::HighResolutionTP const& s2_tc,
-    [[maybe_unused]] types::Point3 const&           s2_p,
-    [[maybe_unused]] types::ValueType               s2_r,
-    [[maybe_unused]] types::Vector3 const&          s2_v,
-    [[maybe_unused]] types::Vector3 const&          external_forces,
-    [[maybe_unused]] types::HighResolutionTP const& t_0,
-    [[maybe_unused]] types::Duration                timestep)
+    [[maybe_unused]] types::HighResolutionTP const&       s1_tc,
+    [[maybe_unused]] types::Point3 const&                 s1_p,
+    [[maybe_unused]] types::ValueType                     s1_r,
+    [[maybe_unused]] types::Vector3 const&                s1_v,
+    [[maybe_unused]] types::HighResolutionTP const&       s2_tc,
+    [[maybe_unused]] types::Point3 const&                 s2_p,
+    [[maybe_unused]] types::ValueType                     s2_r,
+    [[maybe_unused]] types::Vector3 const&                s2_v,
+    [[maybe_unused]] types::Vector3 const&                external_forces,
+    [[maybe_unused]] types::HighResolutionTP const&       t_0,
+    [[maybe_unused]] types::Duration                      timestep,
+    [[maybe_unused]] std::optional<types::Vector3> const& s1_ds = std::nullopt,
+    [[maybe_unused]] std::optional<types::Vector3> const& s2_ds = std::nullopt)
   {
 
     if (s1_tc != s2_tc) {
@@ -33,8 +35,22 @@ namespace dte3607::physengine::mechanics
 
     types::ValueType r = s1_r + s2_r;
     types::ValueType r_sqr = pow(r, 2);
-    auto ds_1 = computeLinearTrajectory(s1_v, external_forces, time_1).first;
-    auto ds_2 = computeLinearTrajectory(s2_v, external_forces, time_2).first;
+
+    types::Vector3 ds_1;
+    if (s1_ds.has_value()) {
+      ds_1 = s1_ds.value();
+    }
+    else {
+      ds_1 = computeLinearTrajectory(s1_v, external_forces, time_1).first;
+    }
+
+    types::Vector3 ds_2;
+    if (s2_ds.has_value()) {
+      ds_2 = s2_ds.value();
+    }
+    else {
+      ds_2 = computeLinearTrajectory(s2_v, external_forces, time_2).first;
+    }
 
     types::Vector3 Q = s2_p - s1_p;
     types::Vector3 R = ds_2 - ds_1;
@@ -48,14 +64,11 @@ namespace dte3607::physengine::mechanics
 
     if (QQ_inner - r_sqr < eps) {
       // Spheres are touching
-      // std::cout << "Spheres are touching" << std::endl;
       return std::nullopt;
     }
 
     if (RR_inner < eps) {
       // Spheres are moving (almost) in parallell
-      // std::cout << "Spheres are moving (almost) in parallell" << std::endl;
-
       return std::nullopt;
     }
 
@@ -73,7 +86,6 @@ namespace dte3607::physengine::mechanics
     types::Duration const t_col = utils::toDuration(x * time_1);
     return s1_tc + t_col;
   }
-
 
 }   // namespace dte3607::physengine::mechanics
 
