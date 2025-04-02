@@ -41,3 +41,7 @@ moc_*
 ##########################################
 # Ignored Ct Creator spesifics directories
 qtc-gdbmacros
+
+#######
+## venv
+.venv
