@@ -301,13 +301,14 @@ namespace dte3607::physengine::solver_dev::level2_3
       types::Duration timestep = (params.t_0 + params.dt) - spheres[i].t_c;
       // types::Duration timestep = params.dt - (spheres[i].t_c - params.t_0);
 
-      auto ds = mechanics::computeLinearTrajectory(
+      auto traj = mechanics::computeLinearTrajectory(
                   spheres[i].v,
                   params.F,
                   timestep
-                  ).first;
+                  );
 
-      spheres[i].p += ds;
+      spheres[i].p += traj.first;
+      spheres[i].v += traj.second;
     }
   }
 
@@ -405,10 +406,14 @@ namespace dte3607::physengine::solver_dev::level2_3
     simulateObjects(params, spheres);
 
     // Update scenario
+    std::cout << "update scenario" << std::endl;
     for (size_t i = 0; i<spheres.size(); i++) {
       size_t sphere_id = sphere_idx[i];
 
       scenario.setGlobalFramePosition(sphere_id, spheres[i].p);
+      scenario.setSphereVelocity(sphere_id, spheres[i].v);
+
+      std::cout << "S_id: " << sphere_id << std::endl;
     }
   }
 }   // namespace dte3607::physengine::solver_dev::level2_3
