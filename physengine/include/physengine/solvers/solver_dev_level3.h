@@ -374,7 +374,7 @@ namespace dte3607::physengine::solver_dev::level3
 
     types::ValueType ds_n = blaze::inner(ds, n);   // size of ds normal to plane, along n
     types::Vector3   ds_p = ds - ds_n * n;         // ds parallell to plane
-    auto             eps = 1e-5;
+    auto             eps = 1e-2;
 
     // Free -> Sliding / Resting
     if (old_state == types::RBState::Free) {
@@ -393,7 +393,7 @@ namespace dte3607::physengine::solver_dev::level3
     }
 
     // Attached to Free / Sliding / Resting  ~~TODO~~
-    std::optional<types::RBState> new_state; // = std::nullopt;
+    std::optional<types::RBState> new_state;
 
     if (ds_n > 0) {
       return types::RBState::Free;

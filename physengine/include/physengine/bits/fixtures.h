@@ -138,8 +138,14 @@ namespace dte3607::physengine::fixtures
       return m_rigid_bodies[rid].translation;
     }
 
+
+    // Set RB properties
     void      setGlobalFramePosition(size_t rid, Vector3 pos) {
       m_rigid_bodies[rid].translation = pos;
+    }
+
+    void      setSphereVelocity(size_t rid, Vector3 vel) {
+      m_rigid_bodies[rid].velocity = vel;
     }
 
 
@@ -242,20 +248,12 @@ namespace dte3607::physengine::fixtures
     }
 
     // RB properties
-    void      setGlobalFramePosition(size_t rid, Vector3 pos) {
-      m_rigid_bodies[rid].translation = pos;
-    }
-
     Point3    globalFramePosition(size_t rid) const {
       return m_rigid_bodies[rid].translation;
     }
 
     ValueType rbSphereRadius(size_t s_rid) const {
       return m_rigid_bodies[s_rid].radius.value();
-    }
-
-    void setSphereVelocity(size_t rid, Vector3 v) {
-      m_rigid_bodies[rid].velocity = v;
     }
 
     Vector3   rbSphereVelocity(size_t s_rid) const {
@@ -279,31 +277,11 @@ namespace dte3607::physengine::fixtures
     }
 
     ValueType rbPlaneMaxFrictionCoef() const {
-      /*
-      // ValueType max_friction = 0.;
-      // for (size_t id : m_plane_idx) {
-      //   if (m_rigid_bodies[id].friction_coef > max_friction) {
-      //     max_friction = m_rigid_bodies[id].friction_coef;
-      //   }
-      // }
-      // return max_friction; */
       return m_max_friction;
     }
 
     ValueType rbSphereMaxFrictionCoef() const {
-      /*
-      //ValueType max_friction = 0.;
-      // for (size_t id : m_sphere_idx) {
-      //   if (m_rigid_bodies[id].friction_coef > max_friction) {
-      //     max_friction = m_rigid_bodies[id].friction_coef;
-      //   }
-      // }
-      // return max_friction; */
       return m_max_friction;
-    }
-
-    void      setRbState (size_t rid, RBState state) {
-      m_rigid_bodies[rid].initial_state = state;
     }
 
     RBState   rbState(size_t rid) const {
@@ -313,6 +291,21 @@ namespace dte3607::physengine::fixtures
       }
       return {};
     }
+
+    // Set RB properties
+    void      setGlobalFramePosition(size_t rid, Vector3 pos) {
+      m_rigid_bodies[rid].translation = pos;
+    }
+
+    void      setSphereVelocity(size_t rid, Vector3 v) {
+      m_rigid_bodies[rid].velocity = v;
+    }
+
+    void      setRbState (size_t rid, RBState state) {
+      m_rigid_bodies[rid].initial_state = state;
+    }
+
+
 
     // Attachements
     void clearAttached() {
