@@ -61,22 +61,28 @@ namespace frb
       virtual void setDataFromGodot(Variant const& p_data) = 0;
     };
 
+
+
     struct Shape : GodotShape {
       using GodotShape::GodotShape;
 
-      virtual Point3 centerOfMass() const = 0;
+      virtual Point3    centerOfMass() const = 0;
+      virtual Point3    point() const = 0;
+      virtual ValueType radius() const { return 0; };
+      virtual Vector3   normal() const { return {}; };
     };
+
 
 
     struct SphereRB : Shape {
       SphereRB(ValueType const& radius = 1.);
 
       // Sphere prop. access
-      Point3    point() const;
-      ValueType radius() const;
+      Point3    point() const override;
+      ValueType radius() const override;
+      Point3    centerOfMass() const override;
 
       // Concept requirements END
-      Point3 centerOfMass() const override;
 
       void setDataFromGodot(Variant const& p_data) override;
 
@@ -84,14 +90,15 @@ namespace frb
       ValueType m_radius{1.0};
     };
 
+
+
     struct PlaneRB : Shape {
       PlaneRB(types::Vector3 const& n = {.0, 1., .0});
 
       // Plane prop. access
-      Point3  point() const;
-      Vector3 normal() const;
-
-      Point3 centerOfMass() const override;
+      Point3  point() const override;
+      Vector3 normal() const override;
+      Point3  centerOfMass() const override;
 
       void setDataFromGodot(Variant const& p_data) override;
 
@@ -109,7 +116,6 @@ namespace frb
     // Class type constants
     static constexpr ValueType frictionCoefMin{0.0};
     static constexpr ValueType frictionCoefMax{1.0};
-
 
     ValueType frictionCoef() const;
     void      setFrictionCoef(ValueType const& friction_coef);
@@ -226,31 +232,42 @@ namespace frb
 
     /*** API concept required methods ***/
 
-    // Global properties
-    size_t noRigidBodies() const;
-    Forces externalForces() const;
+    // Environment
+    Forces              getGravity() const;
+    void                setGravity(Forces);
 
-    void setGravity(Forces);
+    // RBs
+    size_t              noRigidBodies() const;
+    std::vector<size_t> nonFixedSphereRBs() const;
+    std::vector<size_t> fixedInfPlaneRBs() const;
+
 
     // RB properties
-    types::Point3  globalFramePosition(size_t rid) const;
-    types::Vector3 globalVelocity(size_t rid) const;
+    ValueType           rbSphereRadius(size_t rid) const;
+    Vector3             rbSphereVelocity(size_t rid) const;
+    Vector3             rbPlaneNormal(size_t rid) const;
+    types::Point3       globalFramePosition(size_t rid) const;
 
-    // Modes and states
-    RigidBody::Mode mode(size_t rid) const;
+    // Set RB properties
+    void   setGlobalFramePosition(size_t rid, Vector3 position);
+    void   setSphereVelocity(size_t rid, Vector3 velocity);
+    // void   translateParent(size_t rid, Vector3 lin_trajectory);
+    // void   setVelocity(size_t rid, Vector3 velocity);
+    // void   addAcceleration(size_t rid, Vector3 accel);
 
-    // Transform
-    void translateParent(size_t rid, Vector3 lin_trajectory);
-    void setVelocity(size_t rid, Vector3 velocity);
-    void addAcceleration(size_t rid, Vector3 accel);
+    // Mode & state
+    RigidBody::Mode     mode(size_t rid) const;
 
     // Construction methods
-    size_t createSphere(ValueType radius = 1., Vector3 velocity = {0, 0, 0},
-                        Vector3   translation   = {0, 0, 0},
-                        ValueType friction_coef = 1.)
-    {
-      return {};
-    }
+    size_t createSphere(ValueType radius      = 1.,
+                        Vector3   velocity    = {0, 0, 0},
+                        Vector3   translation = {0, 0, 0});
+
+    size_t createFixedInfPlane(Vector3 normal      = {0, 1, 0},
+                               Vector3 translation = {0, 0, 0});
+
+
+
 
     /*** END API requirements ***/
 
@@ -258,10 +275,13 @@ namespace frb
 
     /*** Members ***/
 
-    RigidBodies m_rigid_bodies;
-    RBShapes    m_rb_shapes;
+    RigidBodies         m_rigid_bodies;
+    RBShapes            m_rb_shapes;
 
-    Forces m_forces;
+    Forces              m_forces;
+
+    std::vector<size_t> m_sphere_idx;
+    std::vector<size_t> m_plane_idx;
   };
 
 }   // namespace frb

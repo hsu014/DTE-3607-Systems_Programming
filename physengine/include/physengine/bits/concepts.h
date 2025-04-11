@@ -269,7 +269,7 @@ namespace dte3607::physengine::concepts
   // The requirements on the concept used for the sover API
 
   template <typename Fixture_T>
-  concept SolverFixture = SolverFixtureLevel0<Fixture_T>;
+  concept SolverFixture = SolverFixtureLevel2<Fixture_T>;
 
 
 

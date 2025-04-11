@@ -263,6 +263,26 @@ void Dte3607EntryPoint::body_add_shape(RID p_body, RID p_shape,
   rbp->m_shape = shape;
   detail::updateSofFromTransform(rbp->spaceObject(), p_transform);
   rbp->setFrictionCoef(1.0);
+
+  // Extract and add indexes for non-fixed or fixed RBs
+  for (auto body_id = 0; body_id < m_fixture.m_rigid_bodies.size(); ++body_id) {
+    if (m_fixture.m_rigid_bodies.at(body_id).get() == rb) {
+      ShapeSW* shape_sw = m_server.shape_owner.get(p_shape);
+      switch (shape_sw->get_type()) {
+        case PhysicsServerSW::ShapeType::SHAPE_PLANE:
+          m_fixture.m_plane_idx.emplace_back(body_id);
+          break;
+
+        case PhysicsServerSW::ShapeType::SHAPE_SPHERE:
+          m_fixture.m_sphere_idx.emplace_back(body_id);
+          break;
+
+        default:
+          break;
+      }
+    }
+  }
+
 }
 
 void Dte3607EntryPoint::body_set_state(RID                      p_body,
