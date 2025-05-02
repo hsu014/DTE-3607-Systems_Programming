@@ -12,7 +12,7 @@ namespace dte3607::physengine::api
 {
 
   // SOLVER
-  template <concepts::SolverFixture Fixture_T>
+  template <concepts::SolverFixtureLevel2 Fixture_T>
   void solve(Fixture_T& scenario, types::NanoSeconds timestep)
   {
     // Call another solver !_!
