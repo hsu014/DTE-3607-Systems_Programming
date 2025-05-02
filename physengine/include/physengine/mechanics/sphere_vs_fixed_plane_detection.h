@@ -43,7 +43,7 @@ namespace dte3607::physengine::mechanics
 
     auto q = blaze::inner(d, n);        // Q = q * n
     auto r = blaze::inner(ds, n);       // R = r * n;
-    auto eps = 1e-5;
+    auto eps = 1e-12;
 
     if (std::abs(q) < eps) {
       // Sphere is touching the plane

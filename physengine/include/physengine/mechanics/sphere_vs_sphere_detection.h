@@ -54,7 +54,7 @@ namespace dte3607::physengine::mechanics
 
     types::Vector3 Q = s2_p - s1_p;
     types::Vector3 R = ds_2 - ds_1;
-    auto eps = 1e-5;
+    auto eps = 1e-12;
 
     auto QQ_inner = blaze::inner(Q, Q);
     auto RR_inner = blaze::inner(R, R);
