@@ -249,11 +249,8 @@ namespace frb
     types::Point3       globalFramePosition(size_t rid) const;
 
     // Set RB properties
-    void   setGlobalFramePosition(size_t rid, Vector3 position);
-    void   setSphereVelocity(size_t rid, Vector3 velocity);
-    // void   translateParent(size_t rid, Vector3 lin_trajectory);
-    // void   setVelocity(size_t rid, Vector3 velocity);
-    // void   addAcceleration(size_t rid, Vector3 accel);
+    void                setGlobalFramePosition(size_t rid, Vector3 position);
+    void                setSphereVelocity(size_t rid, Vector3 velocity);
 
     // Mode & state
     RigidBody::Mode     mode(size_t rid) const;

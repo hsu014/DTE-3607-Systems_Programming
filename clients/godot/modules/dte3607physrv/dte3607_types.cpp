@@ -163,7 +163,6 @@ namespace frb
     return m_plane_idx;
   }
 
-  // Angry that radius is not a member
   types::ValueType Fixture::rbSphereRadius(size_t rid) const{
     return m_rigid_bodies.at(rid)->m_parts.at(0)->shape()->radius();
   }
@@ -172,29 +171,16 @@ namespace frb
     return m_rigid_bodies.at(rid)->velocity();
   }
 
-  // Angry that normal is not a member
   types::Vector3   Fixture::rbPlaneNormal(size_t rid) const{
     return m_rigid_bodies.at(rid)->m_parts.at(0)->shape()->normal();
   }
-
 
   types::Point3 Fixture::globalFramePosition(size_t rid) const
   {
     return m_rigid_bodies[rid]->globalFramePosition();
   }
 
-  // types::Vector3 Fixture::globalVelocity(size_t rid) const
-  // {
-  //   return m_rigid_bodies[rid]->velocity();
-  // }
-
-  // void Fixture::translateParent(size_t rid, Vector3 lin_trajectory)
-  // {
-  //   m_rigid_bodies[rid]->m_object.translateParent(lin_trajectory);
-  // }
-
   void Fixture::setGlobalFramePosition(size_t rid, types::Vector3 position){
-    // Not sure how to set new position explicitly
     auto p0 = globalFramePosition(rid);
     auto lin_trajectory = position - p0;
     m_rigid_bodies[rid]->m_object.translateParent(lin_trajectory);
@@ -208,20 +194,6 @@ namespace frb
   {
     return m_rigid_bodies[rid]->mode();
   }
-
-
-  // void Fixture::setVelocity(size_t rid, Vector3 velocity)
-  // {
-  //   m_rigid_bodies[rid]->setVelocity(velocity);
-  // }
-
-  // void Fixture::addAcceleration(size_t rid, Vector3 accel)
-  // {
-  //   m_rigid_bodies[rid]->addAcceleration(accel);
-  // }
-
-
-
 
 
 }   // namespace frb
