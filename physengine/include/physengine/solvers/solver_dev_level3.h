@@ -379,7 +379,7 @@ namespace dte3607::physengine::solver_dev::level3
     // Free -> Sliding / Resting
     if (old_state == types::RBState::Free) {
 
-      if (ds_n > 0) {
+      if (ds_n > eps) {
         return std::nullopt;
       }
 
