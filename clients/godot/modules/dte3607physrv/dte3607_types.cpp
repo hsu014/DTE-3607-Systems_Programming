@@ -59,8 +59,8 @@ namespace frb
     real_t radius = p_data;
     m_radius      = radius;
 
-    std::cout << "setting radius of " << m_shape_rid.get_id() << " to "
-              << m_radius << '\n';
+    // std::cout << "setting radius of " << m_shape_rid.get_id() << " to "
+    //           << m_radius << '\n';
   }
 
   rb_shapes::PlaneRB::PlaneRB(const types::Vector3& n)
@@ -90,8 +90,8 @@ namespace frb
     m_n[1] = p_n[1];
     m_n[2] = p_n[2];
 
-    std::cout << "setting normal of " << m_shape_rid.get_id() << " to ("
-              << m_n[0] << ", " << m_n[1] << ", " << m_n[2] << ")" << '\n';
+    // std::cout << "setting normal of " << m_shape_rid.get_id() << " to ("
+    //           << m_n[0] << ", " << m_n[1] << ", " << m_n[2] << ")" << '\n';
 
   }
 
@@ -122,9 +122,13 @@ namespace frb
 
   RigidBody::Vector3 RigidBody::velocity() const { return m_velocity; }
 
+  size_t RigidBody::nextGoal() const { return m_next_goal; }
+
   void RigidBody::addAcceleration(const types::Vector3& a) { m_velocity += a; }
 
   void RigidBody::setVelocity(const types::Vector3& v) { m_velocity = v; }
+
+  void RigidBody::setNextGoal(const size_t goal) { m_next_goal = goal; }
 
   RigidBody::Vector3 RigidBody::centerOfMass()
   {
@@ -142,6 +146,10 @@ namespace frb
 
 
 
+
+
+
+
   // Fixture
   size_t Fixture::noRigidBodies() const
   {
@@ -155,8 +163,20 @@ namespace frb
 
   void Fixture::setGravity(Forces G) { m_forces = G; }
 
+  types::ValueType Fixture::getMaxSpeed() const {
+    return m_max_speed;
+  }
+
+  std::vector<types::Point3> Fixture::getPath() const {
+    return m_path;
+  }
+
   std::vector<size_t> Fixture::nonFixedSphereRBs() const{
     return m_sphere_idx;
+  }
+
+  std::vector<size_t> Fixture::fixedSphereRBs() const{
+    return m_static_sphere_idx;
   }
 
   std::vector<size_t> Fixture::fixedInfPlaneRBs() const{
@@ -167,15 +187,19 @@ namespace frb
     return m_rigid_bodies.at(rid)->m_parts.at(0)->shape()->radius();
   }
 
-  types::Vector3   Fixture::rbSphereVelocity(size_t rid) const{
+  types::Vector3 Fixture::rbSphereVelocity(size_t rid) const{
     return m_rigid_bodies.at(rid)->velocity();
+  }
+
+  size_t Fixture::rbSphereNextGoal(size_t rid) const{
+    return m_rigid_bodies.at(rid)->nextGoal();
   }
 
   types::Vector3   Fixture::rbPlaneNormal(size_t rid) const{
     return m_rigid_bodies.at(rid)->m_parts.at(0)->shape()->normal();
   }
 
-  types::Point3 Fixture::globalFramePosition(size_t rid) const
+  Fixture::Point3 Fixture::globalFramePosition(size_t rid) const
   {
     return m_rigid_bodies[rid]->globalFramePosition();
   }
@@ -188,6 +212,10 @@ namespace frb
 
   void Fixture::setSphereVelocity(size_t rid, types::Vector3 velocity){
     m_rigid_bodies[rid]->setVelocity(velocity);
+  }
+
+  void Fixture::setSphereNextGoal(size_t rid, size_t goal){
+    m_rigid_bodies[rid]->setNextGoal(goal);
   }
 
   RigidBody::Mode Fixture::mode(size_t rid) const

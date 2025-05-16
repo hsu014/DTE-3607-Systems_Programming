@@ -266,10 +266,22 @@ namespace dte3607::physengine::concepts
 
 
 
+  template <typename Fixture_T>
+  concept SolverFixtureProject =
+
+    detail::BasicTypesDefined<Fixture_T>
+
+    // and ...
+
+    ;
+
+
+
+
   // The requirements on the concept used for the solver API
 
-  template <typename Fixture_T>
-  concept SolverFixture = SolverFixtureLevel2<Fixture_T>;
+  // template <typename Fixture_T>
+  // concept SolverFixture = SolverFixtureLevel2<Fixture_T>;
 
 
 

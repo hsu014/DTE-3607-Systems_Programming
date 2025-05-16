@@ -158,11 +158,15 @@ namespace frb
     // Mechanics property access
     Vector3 velocity() const;
 
+    size_t nextGoal() const;
+
     /** a; in the "parent" spacial frame */
     void addAcceleration(types::Vector3 const& a);
 
     /** v; in the "parent" spacial frame */
     void setVelocity(types::Vector3 const& v);
+
+    void setNextGoal(size_t const goal);
 
 
     // Propagated mechanics property access
@@ -182,6 +186,7 @@ namespace frb
     Vector3   m_velocity{0, 0, 0};
     Mode      m_mode{Mode::NonFixed};
     State     m_state{State::Free};
+    size_t    m_next_goal{0};
 
 
   public:
@@ -235,33 +240,38 @@ namespace frb
     // Environment
     Forces              getGravity() const;
     void                setGravity(Forces);
+    ValueType           getMaxSpeed() const;
+    std::vector<Point3> getPath() const;
 
     // RBs
     size_t              noRigidBodies() const;
     std::vector<size_t> nonFixedSphereRBs() const;
+    std::vector<size_t> fixedSphereRBs() const;
     std::vector<size_t> fixedInfPlaneRBs() const;
 
 
     // RB properties
     ValueType           rbSphereRadius(size_t rid) const;
     Vector3             rbSphereVelocity(size_t rid) const;
+    size_t              rbSphereNextGoal(size_t rid) const;
     Vector3             rbPlaneNormal(size_t rid) const;
-    types::Point3       globalFramePosition(size_t rid) const;
+    Point3              globalFramePosition(size_t rid) const;
 
     // Set RB properties
     void                setGlobalFramePosition(size_t rid, Vector3 position);
     void                setSphereVelocity(size_t rid, Vector3 velocity);
+    void                setSphereNextGoal(size_t rid, size_t goal);
 
     // Mode & state
     RigidBody::Mode     mode(size_t rid) const;
 
     // Construction methods
-    size_t createSphere(ValueType radius      = 1.,
-                        Vector3   velocity    = {0, 0, 0},
-                        Vector3   translation = {0, 0, 0});
+    // size_t createSphere(ValueType radius      = 1.,
+    //                     Vector3   velocity    = {0, 0, 0},
+    //                     Vector3   translation = {0, 0, 0});
 
-    size_t createFixedInfPlane(Vector3 normal      = {0, 1, 0},
-                               Vector3 translation = {0, 0, 0});
+    // size_t createFixedInfPlane(Vector3 normal      = {0, 1, 0},
+    //                            Vector3 translation = {0, 0, 0});
 
 
 
@@ -278,7 +288,18 @@ namespace frb
     Forces              m_forces;
 
     std::vector<size_t> m_sphere_idx;
+    std::vector<size_t> m_static_sphere_idx;
     std::vector<size_t> m_plane_idx;
+
+    ValueType           m_max_speed = 10;
+    std::vector<Point3> m_path = {
+      {1, 1, 0},
+      {4, 1, 0},
+      {6, 1, 4},
+      {0, 1, 0},
+    };
+
+
   };
 
 }   // namespace frb
