@@ -84,23 +84,144 @@ namespace dte3607::physengine::solver_dev::project
 
 
   void raiseSphere(SphereGeomDataBlock& sphere) {
+    std::cout << "Raise sphere " << std::endl;
     sphere.raised = true;
-    // sphere.p += types::Vector3{0, 2 * sphere.r, 0};
+    sphere.p[1] += 2 * sphere.r;
   }
 
 
 
   void lowerSphere(SphereGeomDataBlock& sphere) {
+    std::cout << "Lower sphere " << std::endl;
     sphere.raised = false;
-    // sphere.p -= types::Vector3{0, 2 * sphere.r, 0};
+    sphere.p[1] -= 2 * sphere.r;
   }
 
 
 
-  void moveSphere(Params&              params,
-                  SphereGeomData&      spheres,
-                  StaticSphereGeomData static_spheres,
-                  size_t               s_id)
+  void attemptLower(Params&               params,
+                    SphereGeomDataBlock&  sphere,
+                    StaticSphereGeomData& static_spheres,
+                    types::ValueType&     dist_remaining,
+                    size_t                prev_goal_id) {
+
+    std::optional<types::Vector3> collision = detectCollision(  // collision down
+      {0, -2 * sphere.r, 0},
+      sphere,
+      static_spheres);
+
+    if (!collision.has_value()) {
+      lowerSphere(sphere);
+
+      // backtrack to find first availible position for sphere to lower into.
+      std::cout << "Backtrack to goal: " << prev_goal_id << std::endl;
+      if (prev_goal_id < 0) return;
+
+      types::Point3 prev_goal = params.path[prev_goal_id];
+      types::Vector3 ds = prev_goal - sphere.p;
+
+      collision = detectCollision(ds, sphere, static_spheres);
+      if (!collision.has_value()) {
+        std::cout << "No backtrack collision" << std::endl;
+        return;
+      }
+
+      ds = collision.value();
+      dist_remaining += blaze::length(ds);
+      sphere.p += ds;
+
+    }
+
+  }
+
+
+
+  void moveToGoal(Params&               params,
+                  SphereGeomDataBlock&  sphere,
+                  StaticSphereGeomData& static_spheres,
+                  types::Point3&        goal,
+                  types::ValueType&     dist_to_goal,
+                  types::ValueType&     dist_remaining) {
+
+    types::Point3 cur_goal = goal;
+    if (sphere.raised) {
+      cur_goal[1] += 2 * sphere.r;
+    }
+
+    types::Vector3                ds = cur_goal - sphere.p;
+    std::optional<types::Vector3> collision = detectCollision(ds, sphere, static_spheres);
+
+    if (collision.has_value()) {
+      ds = collision.value();
+      dist_remaining -= blaze::length(ds);
+      sphere.p += ds;
+      raiseSphere(sphere);
+
+      return;
+    }
+    else {
+      std::cout << "Goal reached: " << sphere.next_goal << std::endl;
+      dist_remaining -= dist_to_goal;
+      sphere.p = cur_goal;
+      sphere.next_goal += 1;
+      std::cout << "New goal: " << sphere.next_goal << std::endl;
+    }
+
+    // attempt to lower
+    if(sphere.raised) {
+      attemptLower(
+        params,
+        sphere,
+        static_spheres,
+        dist_remaining,
+        sphere.next_goal - 2);
+    }
+
+  }
+
+
+
+  void moveTowardsGoal(Params&               params,
+                       SphereGeomDataBlock&  sphere,
+                       StaticSphereGeomData& static_spheres,
+                       types::Point3&        goal,
+                       types::ValueType&     dist_remaining) {
+
+    types::Point3 cur_goal = goal;
+    if (sphere.raised) {
+      cur_goal[1] += 2 * sphere.r;
+    }
+
+    types::Vector3 ds = blaze::normalize(cur_goal - sphere.p) * dist_remaining;
+    std::optional<types::Vector3> collision = detectCollision(ds, sphere, static_spheres);
+
+    if (collision.has_value()) {
+      ds = collision.value();
+      dist_remaining -= blaze::length(ds);
+      sphere.p += ds;
+      raiseSphere(sphere);
+    }
+    else{
+      sphere.p += ds;
+    }
+
+    // attempt to lower
+    if(sphere.raised) {
+      attemptLower(
+        params,
+        sphere,
+        static_spheres,
+        dist_remaining,
+        sphere.next_goal - 1);
+    }
+  }
+
+
+
+  void moveSphere(Params&               params,
+                  SphereGeomData&       spheres,
+                  StaticSphereGeomData& static_spheres,
+                  size_t                s_id)
   {
 
     SphereGeomDataBlock& sphere = spheres[s_id];
@@ -108,9 +229,6 @@ namespace dte3607::physengine::solver_dev::project
     types::Point3    goal;
     types::ValueType dist_to_goal;
     types::ValueType dist_remaining = params.v_max * utils::toDtScalar(params.dt);
-    types::Vector3   ds;
-
-    std::optional<types::Vector3> collision;
 
     while(true) {
 
@@ -119,52 +237,54 @@ namespace dte3607::physengine::solver_dev::project
         return;
       }
 
-      if (sphere.raised) {
-        // std::cout << "Collision\n" << std::endl;
-        return;
-      }
-
       goal = params.path[sphere.next_goal];
-      dist_to_goal = blaze::length(goal - sphere.p);
+
+      if (sphere.raised) {
+        types::Point3 raised_goal = goal;
+        raised_goal[1] += 2 * sphere.r;
+        dist_to_goal = blaze::length(raised_goal - sphere.p);
+      }
+      else{
+        dist_to_goal = blaze::length(goal - sphere.p);
+      }
 
       // Move to next goal
       if (dist_remaining >= dist_to_goal) {
-        ds = goal - sphere.p;
-        collision = detectCollision(ds, sphere, static_spheres);
-
-        if (collision.has_value()) {
-          ds = collision.value();
-          dist_remaining -= blaze::length(ds);
-          sphere.p += ds;
-          raiseSphere(sphere);
-        }
-        else {
-          std::cout << "Goal reached: " << sphere.next_goal << std::endl;
-          dist_remaining -= dist_to_goal;
-          sphere.p = goal;
-          sphere.next_goal += 1;
-          std::cout << "New goal: " << sphere.next_goal << std::endl;          
-        }
+        moveToGoal(
+          params,
+          sphere,
+          static_spheres,
+          goal,
+          dist_to_goal,
+          dist_remaining);
       }
       // Move towards next goal
       else {
-        ds = blaze::normalize(goal - sphere.p) * dist_remaining;
-        collision = detectCollision(ds, sphere, static_spheres);
-
-        if (collision.has_value()) {
-          ds = collision.value();
-          dist_remaining -= blaze::length(ds);
-          sphere.p += ds;
-          raiseSphere(sphere);
-        }
-        else{
-          sphere.p += ds;
-        }
+        moveTowardsGoal(
+          params,
+          sphere,
+          static_spheres,
+          goal,
+          dist_remaining);
 
         break;
       }
     }
   }
+
+  /* TODO raised movement
+   *
+   * if sphere is raised:
+   *   move towards next goal
+   *   if goal reached:
+   *     try to move down(look for collision)
+   *     if no collision found:
+   *       move down
+   *       try to move backwards toward prev goal(detect collision, ds)
+   *       dist_remaining += len(ds)
+   *       sphere.p += ds
+   *
+   */
 
 
 

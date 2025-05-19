@@ -299,11 +299,19 @@ namespace frb
     std::vector<size_t> m_plane_idx;
 
     ValueType           m_max_speed = 2;
+    ValueType           h = 1;
     std::vector<Point3> m_path = {
-      {1, 1, 0},
-      {4, 1, 0},
-      {6, 1, 4},
-      {0, 1, 0},
+      {0, h, 0},
+      {4, h, 0},
+      {6, h, 0},
+      {8, h, 0},
+      {10, h, 0},
+      {4, h, 0},
+      {6, h, 4},
+      {10, h, 4},
+      {3, h, 3},
+      {0, h, 0}
+
     };
 
 
