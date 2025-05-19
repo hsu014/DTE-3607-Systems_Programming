@@ -4,13 +4,12 @@
 #include "../bits/types.h"
 #include "../bits/concepts.h"
 #include "../utils/type_conversion.h"
+#include "../mechanics/sphere_vs_fixed_sphere_detection.h"
 
 namespace dte3607::physengine::solver_dev::project
 {
 
   struct Params {
-    types::Vector3 const          F;                // External forces (environment)
-    types::HighResolutionTP const t_0;
     types::Duration const         dt;               // Timestep (system)
     types::ValueType const        v_max;            // Allowed movement speed
     std::vector<types::Point3>    path;
@@ -21,8 +20,8 @@ namespace dte3607::physengine::solver_dev::project
   struct SphereGeomDataBlock {
     types::Point3                 p;
     types::ValueType const        r;
-    types::HighResolutionTP       t_c;
     size_t                        next_goal;
+    bool                          raised;
   };
   using SphereGeomData = std::vector<SphereGeomDataBlock>;
 
@@ -44,46 +43,64 @@ namespace dte3607::physengine::solver_dev::project
 
 
 
-  // void findMovement([[maybe_unused]]Params&         params,
-  //                   [[maybe_unused]]SphereGeomData& spheres,
-  //                   [[maybe_unused]]size_t          s_id,
-  //                   [[maybe_unused]]MovementData&   movement)
-  // {
+  std::optional<types::Vector3>
+  detectCollision(types::Vector3 ds,
+                  SphereGeomDataBlock& sphere,
+                  StaticSphereGeomData& static_spheres)
+  {
 
-  //   types::Point3 goal = params.path[spheres[s_id].next_goal];
-  //   movement.push_back({s_id, goal});
-  // }
+    std::vector<types::Vector3> collisions;
+
+    for (size_t s_id=0; s_id < static_spheres.size(); s_id++){
+      StaticSphereGeomDataBlock static_sphere = static_spheres[s_id];
+
+      std::optional<types::Vector3> collision = mechanics::detectCollisionSphereFixedSphere(
+        ds,
+        sphere.p,
+        sphere.r,
+        static_sphere.p,
+        static_sphere.r);
+
+      if (collision.has_value()) {
+        collisions.push_back(collision.value());
+      }
+
+    }
+
+    if (collisions.empty()) {
+      return std::nullopt;
+    }
+    else {
+      // sort collisions, return shortest collision ds
+      std::ranges::sort(collisions, [](auto& col1, auto&col2){
+        return blaze::length(col1) < blaze::length(col2);
+      });
+
+      return collisions.front();
+    }
+
+  }
 
 
 
-  // void findInitialMovement([[maybe_unused]]Params&         params,
-  //                          [[maybe_unused]]SphereGeomData& spheres,
-  //                          [[maybe_unused]]MovementData&   movement)
-  // {
-
-  //   for (size_t s_id=0; s_id < spheres.size(); s_id++) {
-  //     findMovement(params, spheres, s_id, movement);
-  //   }
-  // }
+  void raiseSphere(SphereGeomDataBlock& sphere) {
+    sphere.raised = true;
+    // sphere.p += types::Vector3{0, 2 * sphere.r, 0};
+  }
 
 
 
-  // void handleMovement([[maybe_unused]]Params&         params,
-  //                     [[maybe_unused]]SphereGeomData& spheres,
-  //                     [[maybe_unused]]MovementData&   movement)
-  // {
-
-  // }
+  void lowerSphere(SphereGeomDataBlock& sphere) {
+    sphere.raised = false;
+    // sphere.p -= types::Vector3{0, 2 * sphere.r, 0};
+  }
 
 
 
-
-
-
-
-  void moveSphere([[maybe_unused]]Params&         params,
-                  [[maybe_unused]]SphereGeomData& spheres,
-                  [[maybe_unused]]size_t          s_id)
+  void moveSphere(Params&              params,
+                  SphereGeomData&      spheres,
+                  StaticSphereGeomData static_spheres,
+                  size_t               s_id)
   {
 
     SphereGeomDataBlock& sphere = spheres[s_id];
@@ -91,83 +108,72 @@ namespace dte3607::physengine::solver_dev::project
     types::Point3    goal;
     types::ValueType dist_to_goal;
     types::ValueType dist_remaining = params.v_max * utils::toDtScalar(params.dt);
+    types::Vector3   ds;
+
+    std::optional<types::Vector3> collision;
 
     while(true) {
 
       if (sphere.next_goal >= params.path.size()) {
-        std::cout << "Path complete\n" << std::endl;
+        // std::cout << "Path complete\n" << std::endl;
+        return;
+      }
+
+      if (sphere.raised) {
+        // std::cout << "Collision\n" << std::endl;
         return;
       }
 
       goal = params.path[sphere.next_goal];
       dist_to_goal = blaze::length(goal - sphere.p);
 
-      // std::cout << "position: \n" << sphere.p << std::endl;
-      // std::cout << "goal " << sphere.next_goal << "\n" << goal << std::endl;
+      // Move to next goal
+      if (dist_remaining >= dist_to_goal) {
+        ds = goal - sphere.p;
+        collision = detectCollision(ds, sphere, static_spheres);
 
-      if (dist_remaining >= dist_to_goal) { // Move to next goal
-        std::cout << "Goal reached: " << sphere.next_goal << std::endl;
-        dist_remaining -= dist_to_goal;
-        sphere.p = goal;
-        sphere.next_goal += 1;
-        std::cout << "New goal: " << sphere.next_goal << std::endl;
-
-        // goal = params.path[sphere.next_goal];
-        // dist_to_goal = blaze::length(goal - sphere.p);
-
-        // std::cout << "position: \n" << sphere.p << std::endl;
-        // std::cout << "dist remaining: " << dist_remaining << std::endl;
+        if (collision.has_value()) {
+          ds = collision.value();
+          dist_remaining -= blaze::length(ds);
+          sphere.p += ds;
+          raiseSphere(sphere);
+        }
+        else {
+          std::cout << "Goal reached: " << sphere.next_goal << std::endl;
+          dist_remaining -= dist_to_goal;
+          sphere.p = goal;
+          sphere.next_goal += 1;
+          std::cout << "New goal: " << sphere.next_goal << std::endl;          
+        }
       }
-      else {                                // Move towards goal
+      // Move towards next goal
+      else {
+        ds = blaze::normalize(goal - sphere.p) * dist_remaining;
+        collision = detectCollision(ds, sphere, static_spheres);
 
-        types::Point3 path = goal - sphere.p;
-        types::Point3 ds = blaze::normalize(path) * dist_remaining;
-
-        // std::cout << "path: \n" << path << std::endl;
-        // std::cout << "ds: \n" << ds << std::endl;
-
-        sphere.p += ds;
-
-        // std::cout << "position: \n" << sphere.p << std::endl;
+        if (collision.has_value()) {
+          ds = collision.value();
+          dist_remaining -= blaze::length(ds);
+          sphere.p += ds;
+          raiseSphere(sphere);
+        }
+        else{
+          sphere.p += ds;
+        }
 
         break;
       }
-
     }
-    // std::cout << "After loop\n\n\n" << std::endl;
   }
 
 
 
-
-  /* Want to do:
-   *
-   * for each sphere:
-   *   define next goal point
-   *   while time remaining:
-   *     - look for collision
-   *     if collision found:
-   *       move to collision point
-   *       raise shpere up
-   *     else:
-   *       move toward goal
-   *     move sphere forward in time
-   *     set next goal
-   *
-   */
-
-
-
   template <concepts::SolverFixtureProject Fixture_T>
-  void solve([[maybe_unused]] Fixture_T&         scenario,
-             [[maybe_unused]] types::NanoSeconds timestep)
+  void solve(Fixture_T&         scenario,
+             types::NanoSeconds timestep)
   {
 
-    std::cout << "Using solver" << std::endl;
-
     Params params = {
-      {0,0,0},
-      types::HighResolutionClock::now(),
       timestep,
       scenario.getMaxSpeed(),
       scenario.getPath()
@@ -181,24 +187,18 @@ namespace dte3607::physengine::solver_dev::project
 
     // Spheres
     for (size_t i = 0; i < sphere_idx.size(); i++) {
-
       size_t idx = sphere_idx[i];
 
       spheres.push_back({
         scenario.globalFramePosition(idx),
         scenario.rbSphereRadius(idx),
-        params.t_0,
-        scenario.rbSphereNextGoal(idx)
+        scenario.rbSphereNextGoal(idx),
+        scenario.rbSphereIsRaised(idx)
       });
     }
 
-    // std::cout << "Path size:      " << params.path.size() << std::endl;
-    // std::cout << "Spheres:        " << spheres.size() << std::endl;
-    // std::cout << "Static Spheres: " << static_spheres.size() << std::endl;
-
     // Static spheres
     for (size_t i = 0; i < static_sphere_idx.size(); i++){
-
       size_t idx = static_sphere_idx[i];
 
       static_spheres.push_back({
@@ -207,10 +207,8 @@ namespace dte3607::physengine::solver_dev::project
       });
     }
 
-    //MovementData movements;
-
     for (size_t s_id=0; s_id < spheres.size(); s_id++) {
-      moveSphere(params, spheres, s_id);
+      moveSphere(params, spheres, static_spheres, s_id);
     }
 
     // Update scenario
@@ -219,25 +217,15 @@ namespace dte3607::physengine::solver_dev::project
 
       scenario.setGlobalFramePosition(sphere_id, spheres[i].p);
       scenario.setSphereNextGoal(sphere_id, spheres[i].next_goal);
+      scenario.setSphereRaisedState(sphere_id, spheres[i].raised);
     }
-
-
-
-
-
-
-
-
-
-
-
 
 
 
 
   }
 
-}   // namespace dte3607::physengine::solver_dev::level4
+}   // namespace dte3607::physengine::solver_dev::project
 
 
-#endif   // DTE3607_PHYSENGINE_SOLVER_DEVELOPMENT_LEVEL4_H
+#endif   // DTE3607_PHYSENGINE_SOLVER_PROJECT_H

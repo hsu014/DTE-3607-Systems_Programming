@@ -158,7 +158,9 @@ namespace frb
     // Mechanics property access
     Vector3 velocity() const;
 
-    size_t nextGoal() const;
+    size_t  nextGoal() const;
+
+    bool    isRaised() const;
 
     /** a; in the "parent" spacial frame */
     void addAcceleration(types::Vector3 const& a);
@@ -167,6 +169,8 @@ namespace frb
     void setVelocity(types::Vector3 const& v);
 
     void setNextGoal(size_t const goal);
+
+    void setRaisedState(bool const raised);
 
 
     // Propagated mechanics property access
@@ -187,6 +191,7 @@ namespace frb
     Mode      m_mode{Mode::NonFixed};
     State     m_state{State::Free};
     size_t    m_next_goal{0};
+    bool      m_raised = false;
 
 
   public:
@@ -254,6 +259,7 @@ namespace frb
     ValueType           rbSphereRadius(size_t rid) const;
     Vector3             rbSphereVelocity(size_t rid) const;
     size_t              rbSphereNextGoal(size_t rid) const;
+    bool                rbSphereIsRaised(size_t rid) const;
     Vector3             rbPlaneNormal(size_t rid) const;
     Point3              globalFramePosition(size_t rid) const;
 
@@ -261,6 +267,7 @@ namespace frb
     void                setGlobalFramePosition(size_t rid, Vector3 position);
     void                setSphereVelocity(size_t rid, Vector3 velocity);
     void                setSphereNextGoal(size_t rid, size_t goal);
+    void                setSphereRaisedState(size_t rid, bool raised);
 
     // Mode & state
     RigidBody::Mode     mode(size_t rid) const;
@@ -291,7 +298,7 @@ namespace frb
     std::vector<size_t> m_static_sphere_idx;
     std::vector<size_t> m_plane_idx;
 
-    ValueType           m_max_speed = 10;
+    ValueType           m_max_speed = 2;
     std::vector<Point3> m_path = {
       {1, 1, 0},
       {4, 1, 0},

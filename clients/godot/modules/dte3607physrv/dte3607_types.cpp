@@ -124,11 +124,15 @@ namespace frb
 
   size_t RigidBody::nextGoal() const { return m_next_goal; }
 
+  bool RigidBody::isRaised() const { return m_raised; }
+
   void RigidBody::addAcceleration(const types::Vector3& a) { m_velocity += a; }
 
   void RigidBody::setVelocity(const types::Vector3& v) { m_velocity = v; }
 
   void RigidBody::setNextGoal(const size_t goal) { m_next_goal = goal; }
+
+  void RigidBody::setRaisedState(const bool raised) { m_raised = raised; }
 
   RigidBody::Vector3 RigidBody::centerOfMass()
   {
@@ -195,6 +199,10 @@ namespace frb
     return m_rigid_bodies.at(rid)->nextGoal();
   }
 
+  bool Fixture::rbSphereIsRaised(size_t rid) const{
+    return m_rigid_bodies.at(rid)->isRaised();
+  }
+
   types::Vector3   Fixture::rbPlaneNormal(size_t rid) const{
     return m_rigid_bodies.at(rid)->m_parts.at(0)->shape()->normal();
   }
@@ -216,6 +224,10 @@ namespace frb
 
   void Fixture::setSphereNextGoal(size_t rid, size_t goal){
     m_rigid_bodies[rid]->setNextGoal(goal);
+  }
+
+  void Fixture::setSphereRaisedState(size_t rid, bool raised){
+    m_rigid_bodies[rid]->setRaisedState(raised);
   }
 
   RigidBody::Mode Fixture::mode(size_t rid) const

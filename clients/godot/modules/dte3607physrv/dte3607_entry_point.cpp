@@ -268,13 +268,30 @@ void Dte3607EntryPoint::body_add_shape(RID p_body, RID p_shape,
   for (auto body_id = 0; body_id < m_fixture.m_rigid_bodies.size(); ++body_id) {
     if (m_fixture.m_rigid_bodies.at(body_id).get() == rb) {
       ShapeSW* shape_sw = m_server.shape_owner.get(p_shape);
+      BodySW* body_sw = m_server.body_owner.get(p_body);
+      // std::cout << "id: " << body_id << "\n";
+
       switch (shape_sw->get_type()) {
         case PhysicsServerSW::ShapeType::SHAPE_PLANE:
           m_fixture.m_plane_idx.emplace_back(body_id);
+          // std::cout << "Plane added to fixture." << "\n";
           break;
 
         case PhysicsServerSW::ShapeType::SHAPE_SPHERE:
-          m_fixture.m_sphere_idx.emplace_back(body_id);
+          switch (body_sw->get_mode()) {
+            case PhysicsServerSW::BodyMode::BODY_MODE_RIGID:
+              m_fixture.m_sphere_idx.emplace_back(body_id);
+              // std::cout << "Sphere added to fixture." << "\n";
+              break;
+
+            case PhysicsServerSW::BodyMode::BODY_MODE_STATIC:
+              m_fixture.m_static_sphere_idx.emplace_back(body_id);
+              // std::cout << "Static sphere added to fixture." << "\n";
+              break;
+
+            default:
+              break;
+          }
           break;
 
         default:
@@ -282,6 +299,7 @@ void Dte3607EntryPoint::body_add_shape(RID p_body, RID p_shape,
       }
     }
   }
+  std::cout << "\n";
 
 }
 
