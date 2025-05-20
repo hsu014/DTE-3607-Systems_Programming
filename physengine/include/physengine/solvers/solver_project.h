@@ -9,6 +9,8 @@
 namespace dte3607::physengine::solver_dev::project
 {
 
+  bool loopPath = true;
+
   struct Params {
     types::Duration const         dt;               // Timestep (system)
     types::ValueType const        v_max;            // Allowed movement speed
@@ -84,7 +86,6 @@ namespace dte3607::physengine::solver_dev::project
 
 
   void raiseSphere(SphereGeomDataBlock& sphere) {
-    std::cout << "Raise sphere " << std::endl;
     sphere.raised = true;
     sphere.p[1] += 2 * sphere.r;
   }
@@ -92,7 +93,6 @@ namespace dte3607::physengine::solver_dev::project
 
 
   void lowerSphere(SphereGeomDataBlock& sphere) {
-    std::cout << "Lower sphere " << std::endl;
     sphere.raised = false;
     sphere.p[1] -= 2 * sphere.r;
   }
@@ -114,7 +114,6 @@ namespace dte3607::physengine::solver_dev::project
       lowerSphere(sphere);
 
       // backtrack to find first availible position for sphere to lower into.
-      std::cout << "Backtrack to goal: " << prev_goal_id << std::endl;
       if (prev_goal_id < 0) return;
 
       types::Point3 prev_goal = params.path[prev_goal_id];
@@ -122,7 +121,6 @@ namespace dte3607::physengine::solver_dev::project
 
       collision = detectCollision(ds, sphere, static_spheres);
       if (!collision.has_value()) {
-        std::cout << "No backtrack collision" << std::endl;
         return;
       }
 
@@ -160,11 +158,9 @@ namespace dte3607::physengine::solver_dev::project
       return;
     }
     else {
-      std::cout << "Goal reached: " << sphere.next_goal << std::endl;
       dist_remaining -= dist_to_goal;
       sphere.p = cur_goal;
       sphere.next_goal += 1;
-      std::cout << "New goal: " << sphere.next_goal << std::endl;
     }
 
     // attempt to lower
@@ -205,7 +201,6 @@ namespace dte3607::physengine::solver_dev::project
       sphere.p += ds;
     }
 
-    // attempt to lower
     if(sphere.raised) {
       attemptLower(
         params,
@@ -232,8 +227,11 @@ namespace dte3607::physengine::solver_dev::project
 
     while(true) {
 
-      if (sphere.next_goal >= params.path.size()) {
-        // std::cout << "Path complete\n" << std::endl;
+      if (sphere.next_goal >= params.path.size()) { // Path complete
+
+        if (loopPath) {
+          sphere.next_goal = 0;
+        }
         return;
       }
 
@@ -248,7 +246,6 @@ namespace dte3607::physengine::solver_dev::project
         dist_to_goal = blaze::length(goal - sphere.p);
       }
 
-      // Move to next goal
       if (dist_remaining >= dist_to_goal) {
         moveToGoal(
           params,
@@ -258,7 +255,6 @@ namespace dte3607::physengine::solver_dev::project
           dist_to_goal,
           dist_remaining);
       }
-      // Move towards next goal
       else {
         moveTowardsGoal(
           params,
@@ -271,20 +267,6 @@ namespace dte3607::physengine::solver_dev::project
       }
     }
   }
-
-  /* TODO raised movement
-   *
-   * if sphere is raised:
-   *   move towards next goal
-   *   if goal reached:
-   *     try to move down(look for collision)
-   *     if no collision found:
-   *       move down
-   *       try to move backwards toward prev goal(detect collision, ds)
-   *       dist_remaining += len(ds)
-   *       sphere.p += ds
-   *
-   */
 
 
 
@@ -339,9 +321,6 @@ namespace dte3607::physengine::solver_dev::project
       scenario.setSphereNextGoal(sphere_id, spheres[i].next_goal);
       scenario.setSphereRaisedState(sphere_id, spheres[i].raised);
     }
-
-
-
 
   }
 
