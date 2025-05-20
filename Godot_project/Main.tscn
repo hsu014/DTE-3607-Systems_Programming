@@ -1,0 +1,24 @@
+[gd_scene load_steps=6 format=2]
+
+[ext_resource path="res://HiD and Camera Control.tscn" type="PackedScene" id=2]
+[ext_resource path="res://WorldEnvironment.tscn" type="PackedScene" id=3]
+[ext_resource path="res://tesst.tscn" type="PackedScene" id=4]
+
+[sub_resource type="ProceduralSky" id=2]
+
+[sub_resource type="Environment" id=1]
+background_mode = 2
+background_sky = SubResource( 2 )
+tonemap_mode = 2
+tonemap_white = 16.0
+
+[node name="Main" type="Spatial"]
+
+[node name="Stuff" type="Spatial" parent="."]
+
+[node name="WorldEnvironment" parent="Stuff" instance=ExtResource( 3 )]
+environment = SubResource( 1 )
+
+[node name="HiD and Camera Control" parent="Stuff" instance=ExtResource( 2 )]
+
+[node name="Physics engine test" parent="." instance=ExtResource( 4 )]

@@ -1,0 +1,20 @@
+[gd_scene load_steps=4 format=2]
+
+[ext_resource path="res://scripts/plane_normal.gd" type="Script" id=1]
+
+[sub_resource type="PlaneMesh" id=7]
+size = Vector2( 10, 10 )
+
+[sub_resource type="PlaneShape" id=10]
+resource_local_to_scene = true
+
+[node name="RBPlane" type="RigidBody"]
+mode = 1
+
+[node name="MeshInstance" type="MeshInstance" parent="."]
+mesh = SubResource( 7 )
+material/0 = null
+
+[node name="CollisionShape" type="CollisionShape" parent="."]
+shape = SubResource( 10 )
+script = ExtResource( 1 )
