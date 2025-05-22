@@ -406,14 +406,11 @@ namespace dte3607::physengine::solver_dev::level2_3
     simulateObjects(params, spheres);
 
     // Update scenario
-    std::cout << "update scenario" << std::endl;
     for (size_t i = 0; i<spheres.size(); i++) {
       size_t sphere_id = sphere_idx[i];
 
       scenario.setGlobalFramePosition(sphere_id, spheres[i].p);
       scenario.setSphereVelocity(sphere_id, spheres[i].v);
-
-      std::cout << "S_id: " << sphere_id << std::endl;
     }
   }
 }   // namespace dte3607::physengine::solver_dev::level2_3
